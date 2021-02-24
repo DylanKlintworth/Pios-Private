@@ -1,5 +1,5 @@
 
-# Rasbperry Pi OS
+# Raspberry Pi OS
 
 This is a shell for a custom bare metal operating system on the Raspberry Pi. It is intended to be run inside `qemu` on the Raspberry Pi 3 target (when this doc was written, there was no Pi 4 target).
 
