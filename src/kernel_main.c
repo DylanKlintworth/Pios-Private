@@ -14,8 +14,9 @@ void kernel_main() {
 	clear_bss();
 	//led_init();
 	//int *mu_io_reg = 0x3F215040;
-	unsigned int index = getExecutionLevel();
-	esp_printf(putc, "Num is %d\n", index);
+	//unsigned int index = getExecutionLevel();
+	//esp_printf(putc, "Num is %d\n", index);
+	//mmu_on();
 	while(1){
 		//led_on();
 		//delay(2);

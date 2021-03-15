@@ -14,9 +14,9 @@ SDIR = src
 
 OBJS = \
 	boot.o \
+	mmusetup.o \
 	kernel_main.o \
 	list.o \
-	led.o \
 	delay.o \
 	serial.o \
 	rprintf.o \
