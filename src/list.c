@@ -1,26 +1,45 @@
-#include <stdio.h>
+#include <stddef.h>
 #include "list.h"
 
-void list_add(LinkedList *headNode, LinkedList *newNode){
-	LinkedList *nodeAddress = headNode; //address of head node
-	while (nodeAddress->next != NULL){ //while the next node isn't null, assign node index to next node
-		nodeAddress = nodeAddress->next;
-	}
-	nodeAddress->next = newNode; //set next node to the new nodes address when found to be null
-	newNode->previous = nodeAddress; //
-}	
 
-void list_remove(LinkedList *headNode, LinkedList *removeNode){
-	LinkedList *rn = removeNode;
-	removeNode->next->previous = removeNode->previous;
-	removeNode->previous = NULL;
-	LinkedList *hn = headNode;
-	while (hn->next != NULL){
-		if (hn->next == rn){
-			LinkedList *tempNode = hn->next->next;
-			hn->next = tempNode;
-			break;
-		}
-		hn = hn->next;
-	}
+/*
+ * listAdd
+ *
+ * Adds newElement to a linked list pointed to by list. When calling this function, pass the address of list head.
+ *
+ */
+void listAdd(listElement **head, listElement *newElement){
+    struct listElement *iterator = (listElement*) head ;
+
+    // Link element b into the list between iterator and iterator->next.
+    newElement->next = iterator->next ;
+    newElement->prev = iterator;
+
+    iterator->next = newElement;
+    
+    if(newElement->next != NULL){
+        newElement->next->prev = newElement;
+    }
 }
+
+
+/*
+ * listDelete
+ *
+ * Deletes an element from a doubly linked list.
+ */
+void listRemove(listElement *b)
+{
+	if(b->next != NULL){
+		b->next->prev = b->prev ;
+    }
+	b->prev->next = b->next ;
+
+	// NULLify the element's next and prev pointers to indicate
+	// that it is not linked into a list.
+	b->next = NULL ;
+	b->prev = NULL ;
+}
+
+
+
