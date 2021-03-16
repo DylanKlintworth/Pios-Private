@@ -1,4 +1,4 @@
-#include <stddef.h>
+#include "null.h"
 #include "list.h"
 
 
@@ -37,8 +37,8 @@ void listRemove(listElement *b)
 
 	// NULLify the element's next and prev pointers to indicate
 	// that it is not linked into a list.
-	b->next = NULL ;
-	b->prev = NULL ;
+	b->next = NULL;
+	b->prev = NULL;
 }
 
 
