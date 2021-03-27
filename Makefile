@@ -16,10 +16,12 @@ OBJS = \
 	boot.o \
 	kernel_main.o \
 	list.o \
-	delay.o \
+	delays.o \
 	serial.o \
 	rprintf.o \
-	page.o
+	sd.o \
+	clibfuncs.o \
+	fat.o \
 
 OBJ = $(patsubst %,$(ODIR)/%,$(OBJS))
 
@@ -57,10 +59,12 @@ disassemble:
 
 rootfs.img:
 	dd if=/dev/zero of=rootfs.img bs=1M count=16
-	mkfs.fat -F12 rootfs.img
+	mkfs.fat -F16 rootfs.img
 	sudo mount rootfs.img /mnt/disk
 	sudo mkdir -p /mnt/disk/boot/firmware
+	sudo bash -c 'echo "My name is Dylan" >> /mnt/disk/dylan'
 	sudo mkdir /mnt/disk/bin
 	sudo mkdir /mnt/disk/etc
+	sudo bash -c 'echo "testing" >> /mnt/disk/testing.txt'
 	sudo umount /mnt/disk
 

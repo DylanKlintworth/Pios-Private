@@ -24,7 +24,7 @@ static int num1;
 static int num2;
 static char pad_character;
 
-size_t strlen(const char *str) {
+int strlen(const char *str) {
     unsigned int len = 0;
     while(str[len] != '\0') {
         len++;

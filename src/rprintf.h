@@ -5,10 +5,8 @@
 //#include <ctype.h>
 //#include <string.h>
 #include <stdarg.h>
+#include <stddef.h>
 
-typedef unsigned int  size_t;
-
-#define NULL (void*)0
 
 int isdig(int c); // hand-implemented alternative to isdigit(), which uses a bunch of c library functions I don't want to include.
 
@@ -22,4 +20,5 @@ void esp_sprintf(char *buf, char *ctrl, ...);
 void esp_vprintf( const func_ptr f_ptr, charptr ctrl, va_list argp);
 void esp_printf( const func_ptr f_ptr, charptr ctrl, ...);
 void printk(charptr ctrl, ...);
+int strlen(const char *str);
 #endif
