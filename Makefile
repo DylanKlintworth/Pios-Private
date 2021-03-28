@@ -62,7 +62,9 @@ rootfs.img:
 	mkfs.fat -F16 rootfs.img
 	sudo mount rootfs.img /mnt/disk
 	sudo mkdir -p /mnt/disk/boot/firmware
-	sudo bash -c 'cp file.txt /mnt/disk/boot/'
+	sudo mkdir -p /mnt/disk/whatis/this
+	sudo mkdir -p /mnt/disk/alanturing
+	sudo bash -c 'cp file.txt /mnt/disk/whatis/this/'
 	sudo bash -c 'echo "My name is Dylan" >> /mnt/disk/dylan'
 	sudo bash -c 'echo "Testing" >> /mnt/disk/hello.txt'
 	sudo mkdir /mnt/disk/bin

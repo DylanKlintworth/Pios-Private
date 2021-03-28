@@ -128,7 +128,6 @@ int fatOpen(file *fle, char *filename){
 		nullCharArray(placementFile[i], 11);
 	}
 	fileCount = pathToFileName(placementFile, filename, strlen(filename));
-	esp_printf((void *) putc, "%d\n", fileCount);
 	char filen[8];
 	char ext[3];
 	int foundFile = 0;
@@ -146,10 +145,8 @@ int fatOpen(file *fle, char *filename){
 				strcat(path, ext);
 			}
 			int c;
-			esp_printf((void *) putc, "%s\n", path);
 			c = strcmp(placementFile[0], path);
 			if (c == 0){
-				esp_printf((void *) putc, "EQUAL\n\n");
 				fle->rde = rde;
 				fle->start_cluster = rde.cluster;
 				foundFile = 1;
@@ -182,10 +179,8 @@ int fatOpen(file *fle, char *filename){
 				strcat(path, ext);
 			}
 			int c;
-			esp_printf((void *) putc, "%s\n", path);
 			c = strcmp(placementFile[placementFileIndex], path);
 			if (c == 0){
-				esp_printf((void *) putc, "EQUAL\n\n");
 				parentDirectory = rde;
 				foundFile = 1;
 				break;
@@ -227,7 +222,6 @@ int fatOpen(file *fle, char *filename){
 					strcat(p, ext);
 				}
 				int c;
-				esp_printf((void *) putc, "%s\n", p);
 				c = strcmp(placementFile[placementFileIndex], p);
 				if (c == 0){
 					if (placementFileIndex == subDirectIndex){
@@ -236,7 +230,6 @@ int fatOpen(file *fle, char *filename){
 						foundSubFile = 1;
 						break;
 					} else {
-						esp_printf((void *) putc, "SUBDIR EQUAL\n\n");
 						parentDirectory = rde;
 						placementFileIndex++;
 						break;
@@ -305,7 +298,7 @@ int pathToFileName(char fn[][11], char *path, int length){
 			count++;
 			continue;
 		}
-		fn[count][index] = path[i];
+		fn[count][index] = toupper(path[i]);
 		index++;
 	}
 	return count + 1;
