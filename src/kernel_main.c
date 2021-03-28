@@ -9,11 +9,17 @@ extern long __bss_end;
 void clear_bss();
 void kernel_main() {
 	file fle;
+	char buffer[7000];
 	clear_bss();
 	fatInit();
 	initFatStructs();
-	char *path = "/mynameis/text";
+	char *path = "/BOOT/FILE.TXT";
 	fatOpen(&fle, path);
+	fatRead(buffer, &fle, 50);
+	for (int i = 0; i < 50; i++){
+		esp_printf((void * ) putc, "%c", buffer[i]);
+	}
+	esp_printf((void * ) putc, "\n%d", strlen(buffer));
 }
 
 void clear_bss(){

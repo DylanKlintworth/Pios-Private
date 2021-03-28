@@ -81,7 +81,7 @@ struct file {
     struct file *next;
     struct file *prev;
     struct root_directory_entry rde;
-    uint32_t start_cluster;
+    uint16_t start_cluster;
 };
 
 typedef struct file file;
@@ -94,10 +94,11 @@ typedef struct fat_table_entry fat_table_entry;
 
 int fatInit();
 int fatOpen(file *fle, char* filename);
-int fatRead(char* buffer, file* fp);
+int fatRead(char* buffer, file* fp, unsigned int length);
 int initFatStructs();
-void pathToFileName(char fn[][11], char *path, int length);
-void nullCharArray(char arr[]);
+int pathToFileName(char fn[][11], char *path, int length);
+void nullCharArray(char arr[], int length);
 int isSeparator(char c, char sep);
 void extension(char a[], char b[], unsigned int length);
+void readFromCluster(unsigned char data[], uint16_t clusterNum, unsigned int size);
 #endif

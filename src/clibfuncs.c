@@ -103,4 +103,14 @@ char* strcat(char* destination, const char* source){
     return destination;
 }
 
+char * strncpy ( char * destination, const char * source, unsigned int length) {
+
+    int k = 0;
+    while(source[k] != '\0' && k < length){
+        destination[k] = source[k];
+        k++;
+    }
+    destination[k] = '\0';
+    return destination;
+}
 

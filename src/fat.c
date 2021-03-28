@@ -8,6 +8,7 @@ boot_sector *bs;
 unsigned char bootSector[512];
 unsigned char fat_table[32*SECTOR_SIZE];
 unsigned int root_sector;
+unsigned int data_sector;
 unsigned char rootEntries[512*32];
 unsigned char fatTableChars[8192][2];
 fat_table_entry *fatTablePointers[8192];
@@ -58,6 +59,7 @@ int fatInit() {
 	}
 	//root sector = reserved sectors + hidden sectors + (num fat tables * sectors per fat) 
 	root_sector = (bs->num_fat_tables * bs->num_sectors_per_fat) + bs->num_reserved_sectors + bs->num_hidden_sectors;
+	data_sector = (root_sector + ((bs->num_root_dir_entries * 32) / SECTOR_SIZE));
 	esp_printf((void *) putc, "OEM: ");
 	for(int i = 0; i < sizeof(bs->oem_name); i++){
 		esp_printf((void *) putc, "%c", bs->oem_name[i]);
@@ -117,44 +119,201 @@ int initFatStructs(){
 	for (i = 0; i < 8192; i++){
 		fatTablePointers[i] = (fat_table_entry *) fatTableChars[i];
 	}
-	for (i = 0; i < 20; i++){
-		esp_printf((void *) putc, "%x\n", fatTablePointers[i]->entry);
-	}
 }
 
 int fatOpen(file *fle, char *filename){
 	char placementFile[20][11];
-	pathToFileName(placementFile, filename, strlen(filename));
+	int i, fileCount;
+	for (i = 0; i < 20; i++){
+		nullCharArray(placementFile[i], 11);
+	}
+	fileCount = pathToFileName(placementFile, filename, strlen(filename));
+	esp_printf((void *) putc, "%d\n", fileCount);
 	char filen[8];
 	char ext[3];
-	int i;
-	for (i = 0; i < 1; i++){
-		esp_printf((void *) putc, "%s\n", placementFile[i]);
+	int foundFile = 0;
+	if (fileCount == 1){
+		for (i = 0; i < 512; i++){
+			root_directory_entry rde = *rootDirectoryPointers[i];
+			char *tempFilename = rde.file_name;
+			char *tempExtension = rde.file_extension;
+			char *path;
+			extension(filen, tempFilename, 8);
+			extension(ext, tempExtension, 3);
+			strcpy(path, filen);
+			if (ext[0] != '\0'){
+				strcat(path, ".");
+				strcat(path, ext);
+			}
+			int c;
+			esp_printf((void *) putc, "%s\n", path);
+			c = strcmp(placementFile[0], path);
+			if (c == 0){
+				esp_printf((void *) putc, "EQUAL\n\n");
+				fle->rde = rde;
+				fle->start_cluster = rde.cluster;
+				foundFile = 1;
+			}
+		}
+		if (foundFile != 1){
+			return 0;
+		}
+	} else if (fileCount > 1){
+		int subDirectIndex;
+		for (i = 0; i < 20; i++){
+			if (placementFile[i][0] == '\0'){
+				subDirectIndex = i-1;
+				break;
+			}
+		}
+		root_directory_entry parentDirectory;
+		int foundSubFile = 0;
+		int placementFileIndex = 0;
+		for (i = 0; i < 512; i++){
+			root_directory_entry rde = *rootDirectoryPointers[i];
+			char *tempFilename = rde.file_name;
+			char *tempExtension = rde.file_extension;
+			char *path;
+			extension(filen, tempFilename, 8);
+			extension(ext, tempExtension, 3);
+			strcpy(path, filen);
+			if (ext[0] != '\0'){
+				strcat(path, ".");
+				strcat(path, ext);
+			}
+			int c;
+			esp_printf((void *) putc, "%s\n", path);
+			c = strcmp(placementFile[placementFileIndex], path);
+			if (c == 0){
+				esp_printf((void *) putc, "EQUAL\n\n");
+				parentDirectory = rde;
+				foundFile = 1;
+				break;
+			}
+		}
+		if (foundFile != 1){
+			return 0;
+		}
+		placementFileIndex++;
+		while ((foundSubFile != 1) && (placementFileIndex <= subDirectIndex)){
+			unsigned char dataEntries[16384];
+			unsigned char dataChars[512][32];
+			root_directory_entry *dataPointers[512];
+			int index, count;
+			index = 0; count = 0;
+			readFromCluster(dataEntries, parentDirectory.cluster, 32);
+			for (i = 0; i < 512; i++){
+				if ((i != 0) && (i % 32 == 0)){
+					count++;
+					index = 0;
+				}
+				dataChars[count][index] = dataEntries[i];
+				index++;
+			}
+			for (i = 0; i < 512; i++){
+				dataPointers[i] = (root_directory_entry *) dataChars[i];
+			}
+			for (i = 0; i < 512; i++){
+				root_directory_entry rde = *dataPointers[i];
+				char *tempFilename = rde.file_name;
+				char *tempExtension = rde.file_extension;
+				char p[11];
+				nullCharArray(p, 11);
+				extension(filen, tempFilename, 8);
+				extension(ext, tempExtension, 3);
+				strncpy(p, filen, 8);
+				if (ext[0] != '\0'){
+					strcat(p, ".");
+					strcat(p, ext);
+				}
+				int c;
+				esp_printf((void *) putc, "%s\n", p);
+				c = strcmp(placementFile[placementFileIndex], p);
+				if (c == 0){
+					if (placementFileIndex == subDirectIndex){
+						fle->rde = rde;
+						fle->start_cluster = rde.cluster;
+						foundSubFile = 1;
+						break;
+					} else {
+						esp_printf((void *) putc, "SUBDIR EQUAL\n\n");
+						parentDirectory = rde;
+						placementFileIndex++;
+						break;
+					}
+				}
+			}
+		}
 	}
 }
 
-int fatRead(char* buffer, file* fp){
-	
+int fatRead(char* buffer, file* fp, unsigned int length){
+	uint16_t fpCluster = fp->start_cluster;
+	uint16_t fatValue = fatTablePointers[fpCluster]->entry;
+	uint32_t fileSize = fp->rde.file_size;
+	int i, index;
+	index = 0;
+	if (fatValue >= 0xfff8){
+		unsigned char data[2048];
+		readFromCluster(data, fpCluster, 4);
+		for (i = 0; i < length; i++){
+			buffer[i] = data[i];
+		}
+	} else if (fatValue < 0xfff8){
+		while (fatValue < 0xfff8){
+			unsigned char data[2048];
+			readFromCluster(data, fpCluster, 4);
+			for (i = 0; i < 2048; i++){
+				if (index == length){
+					return 1;
+				}
+				buffer[index] = data[i];
+				index++;
+			}
+			fpCluster = fatValue;
+			fatValue = fatTablePointers[fpCluster]->entry;
+		}
+		unsigned char data[2048];
+		readFromCluster(data, fpCluster, 4);
+		for (i = 0; i < 2048; i++){
+			if (index == length){
+				return 1;
+			}
+			buffer[index] = data[i];
+			index++;
+		}
+	}
+	return 1;
 }
 
-void pathToFileName(char fn[][11], char *path, int length){
+void readFromCluster(unsigned char data[], uint16_t clusterNum, unsigned int size){
+	unsigned int dataSector = data_sector + ((clusterNum - 2) * SECTORS_PER_CLUSTER);
+	sd_readblock(dataSector, data, size);
+}
+
+int pathToFileName(char fn[][11], char *path, int length){
 	int i, count, index;
 	count = 0;
 	index = 0;
 	for (i = 0; i < length; i++){
-		if (isSeparator(path[i], '/')){
-			count++;
+		if (isSeparator(path[i], '/') && i == 0){
 			index = 0;
+			continue;
+		} else if (isSeparator(path[i], '/') && (i != 0)){
+			fn[count][index] = '\0';
+			index = 0;
+			count++;
 			continue;
 		}
 		fn[count][index] = path[i];
 		index++;
 	}
-}
+	return count + 1;
+}	
 
-void nullCharArray(char arr[]){
+void nullCharArray(char arr[], int length){
 	int i;
-	for (i = 0; i < sizeof(arr); i++){
+	for (i = 0; i < length; i++){
 		arr[i] = '\0';
 	}
 }
@@ -170,6 +329,10 @@ int isSeparator(char c, char sep){
 void extension(char a[], char b[], unsigned int length){
 	int i;
 	for (i = 0; i < length; i++){
-		a[i] = b[i];
+		if (b[i] == ' '){
+			a[i] = '\0';
+		} else {
+			a[i] = b[i];
+		}
 	}
 }
