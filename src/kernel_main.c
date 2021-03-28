@@ -8,22 +8,27 @@ extern long __bss_start;
 extern long __bss_end;
 void clear_bss();
 void kernel_main() {
-	file fle1, fle2, fle3;
+	file fle0, fle1, fle2, fle3, fle4;
+	char buffer0[100000];
 	char buffer[11000];
 	char buffer2[100];
 	char buffer3[200];
+	char buffer4[100];
 	clear_bss();
 	fatInit();
 	initFatStructs();
 	char *path = "/whatis/this/file.txt";
+	fatOpen(&fle0, "/alan/alan.txt");
 	fatOpen(&fle1, path);
 	fatOpen(&fle2, "/dylan");
 	fatOpen(&fle3, "/hello.txt");
+	fatOpen(&fle4, "/alan/newfile");
+	fatRead(buffer0, &fle0, 100000);
 	fatRead(buffer, &fle1, 11000);
 	fatRead(buffer2, &fle2, 50);
 	fatRead(buffer3, &fle3, 50);
+	fatRead(buffer4, &fle4, 100);
 	int i;
-	esp_printf((void * ) putc, "\n");
 	for (i = 0; i < strlen(buffer); i++){
 		esp_printf((void * ) putc, "%c", buffer[i]);
 	}
@@ -34,6 +39,13 @@ void kernel_main() {
 	esp_printf((void * ) putc, "\n");
 	for (i = 0; i < strlen(buffer3); i++){
 		esp_printf((void * ) putc, "%c", buffer3[i]);
+	}
+	for (i = 0; i < strlen(buffer4); i++){
+		esp_printf((void * ) putc, "%c", buffer4[i]);
+	}
+	esp_printf((void * ) putc, "\n");
+	for (i = 0; i < strlen(buffer0); i++){
+		esp_printf((void * ) putc, "%c", buffer0[i]);
 	}
 }
 

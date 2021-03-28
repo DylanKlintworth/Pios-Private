@@ -7,7 +7,9 @@
 boot_sector *bs;
 unsigned char bootSector[512];
 unsigned char fat_table[32*SECTOR_SIZE];
+unsigned int fat_table_size;
 unsigned int root_sector;
+unsigned int root_entries_size;
 unsigned int data_sector;
 unsigned char rootEntries[512*32];
 unsigned char fatTableChars[8192][2];
@@ -50,7 +52,7 @@ int fatInit() {
 		esp_printf((void *) putc, "File system type valid\n");
 	}
 	int fat_table_start = bs->num_reserved_sectors;
-	int fat_table_size = bs->num_sectors_per_fat;
+	fat_table_size = bs->num_sectors_per_fat;
 	esp_printf((void *) putc, "FAT TABLE START = %d\nFAT TABLE SIZE: %d\n", fat_table_start, fat_table_size);
 	error = sd_readblock(fat_table_start, fat_table, fat_table_size); //read fat-table into fat_table char[]
 	if (error == 0){
@@ -69,7 +71,8 @@ int fatInit() {
 	/*for (i = 0; i < 20; i++){
 		esp_printf((void *) putc, "%x ", fat_table[i]);
 	}*/
-	error = sd_readblock(68, rootEntries, 32);
+	root_entries_size = ((bs->num_root_dir_entries * 32)/SECTOR_SIZE);
+	error = sd_readblock(root_sector, rootEntries, root_entries_size);
 	/*for (i = 0; i < 1000; i++){
 		if ((i % 16) == 0){
 			esp_printf((void *) putc, "\n");
@@ -92,10 +95,13 @@ int fatInit() {
  */
 
 int initFatStructs(){
-	sd_readblock(root_sector, rootDirectoryEntries, 32);
+	int error = sd_readblock(root_sector, rootDirectoryEntries, root_entries_size);
+	if (error == 0){
+		return 0;
+	}
 	int i, index, count;
 	index = 0; count = 0;
-	for (i = 0; i < 16384; i++){
+	for (i = 0; i < (root_entries_size * SECTOR_SIZE); i++){
 		if (i != 0 && (i % 32 == 0)){
 			count++;
 			index = 0;
@@ -104,7 +110,7 @@ int initFatStructs(){
 		index++;
 	}
 	index = 0; count = 0;
-	for (i = 0; i < 16384; i++){
+	for (i = 0; i < (fat_table_size * SECTOR_SIZE); i++){
 		if (i != 0 && (i % 2 == 0)){
 			count++;
 			index = 0;
@@ -119,6 +125,7 @@ int initFatStructs(){
 	for (i = 0; i < 8192; i++){
 		fatTablePointers[i] = (fat_table_entry *) fatTableChars[i];
 	}
+	return 1;
 }
 
 int fatOpen(file *fle, char *filename){
@@ -136,10 +143,10 @@ int fatOpen(file *fle, char *filename){
 			root_directory_entry rde = *rootDirectoryPointers[i];
 			char *tempFilename = rde.file_name;
 			char *tempExtension = rde.file_extension;
-			char *path;
+			char path[11];
 			extension(filen, tempFilename, 8);
 			extension(ext, tempExtension, 3);
-			strcpy(path, filen);
+			strncpy(path, filen, 8);
 			if (ext[0] != '\0'){
 				strcat(path, ".");
 				strcat(path, ext);
@@ -170,10 +177,10 @@ int fatOpen(file *fle, char *filename){
 			root_directory_entry rde = *rootDirectoryPointers[i];
 			char *tempFilename = rde.file_name;
 			char *tempExtension = rde.file_extension;
-			char *path;
+			char path[11];
 			extension(filen, tempFilename, 8);
 			extension(ext, tempExtension, 3);
-			strcpy(path, filen);
+			strncpy(path, filen, 8);
 			if (ext[0] != '\0'){
 				strcat(path, ".");
 				strcat(path, ext);
@@ -228,6 +235,7 @@ int fatOpen(file *fle, char *filename){
 						fle->rde = rde;
 						fle->start_cluster = rde.cluster;
 						foundSubFile = 1;
+						return 1;
 						break;
 					} else {
 						parentDirectory = rde;
@@ -237,25 +245,26 @@ int fatOpen(file *fle, char *filename){
 				}
 			}
 		}
+		return 0;
 	}
+	return 1;
 }
 
 int fatRead(char* buffer, file* fp, unsigned int length){
 	uint16_t fpCluster = fp->start_cluster;
 	uint16_t fatValue = fatTablePointers[fpCluster]->entry;
-	uint32_t fileSize = fp->rde.file_size;
 	int i, index;
 	index = 0;
 	if (fatValue >= 0xfff8){
 		unsigned char data[2048];
-		readFromCluster(data, fpCluster, 4);
+		readFromCluster(data, fpCluster, SECTORS_PER_CLUSTER);
 		for (i = 0; i < length; i++){
 			buffer[i] = data[i];
 		}
 	} else if (fatValue < 0xfff8){
 		while (fatValue < 0xfff8){
 			unsigned char data[2048];
-			readFromCluster(data, fpCluster, 4);
+			readFromCluster(data, fpCluster, SECTORS_PER_CLUSTER);
 			for (i = 0; i < 2048; i++){
 				if (index == length){
 					return 1;
@@ -267,7 +276,7 @@ int fatRead(char* buffer, file* fp, unsigned int length){
 			fatValue = fatTablePointers[fpCluster]->entry;
 		}
 		unsigned char data[2048];
-		readFromCluster(data, fpCluster, 4);
+		readFromCluster(data, fpCluster, SECTORS_PER_CLUSTER);
 		for (i = 0; i < 2048; i++){
 			if (index == length){
 				return 1;

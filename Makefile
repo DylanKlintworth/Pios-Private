@@ -63,6 +63,9 @@ rootfs.img:
 	sudo mount rootfs.img /mnt/disk
 	sudo mkdir -p /mnt/disk/boot/firmware
 	sudo mkdir -p /mnt/disk/whatis/this
+	sudo mkdir -p /mnt/disk/alan
+	sudo bash -c 'cp alan.txt /mnt/disk/alan/'
+	sudo bash -c 'cp newfile /mnt/disk/alan/'
 	sudo bash -c 'cp file.txt /mnt/disk/whatis/this/'
 	sudo bash -c 'echo "My name is Dylan" >> /mnt/disk/dylan'
 	sudo bash -c 'echo "Testing" >> /mnt/disk/hello.txt'

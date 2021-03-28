@@ -2,4 +2,4 @@
 
 make clean
 make
-make run
+make debug
