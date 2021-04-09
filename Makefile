@@ -21,6 +21,7 @@ OBJS = \
 	rprintf.o \
 	sd.o \
 	clibfuncs.o \
+	string.o \
 	fat.o \
 
 OBJ = $(patsubst %,$(ODIR)/%,$(OBJS))

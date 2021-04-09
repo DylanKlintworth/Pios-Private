@@ -95,10 +95,15 @@ typedef struct fat_table_entry fat_table_entry;
 int fatInit();
 int fatOpen(file *fle, char* filename);
 int fatRead(char* buffer, file* fp, unsigned int length);
+int fat_create(char *filename);
 int initFatStructs();
 int pathToFileName(char fn[][11], char *path, int length);
 void nullCharArray(char arr[], int length);
+void spaceCharArray(char arr[], int length);
 int isSeparator(char c, char sep);
+int hasSeparator(char arr[], char sep, unsigned int length);
 void extension(char a[], char b[], unsigned int length);
+void oppositeExtension(char a[], char b[], char c[]);
 void readFromCluster(unsigned char data[], uint16_t clusterNum, unsigned int size);
+void printCharArray(char arr[], unsigned int length);
 #endif
