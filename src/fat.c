@@ -25,6 +25,9 @@ unsigned char rootDirectoryEntries[16384];
 unsigned char rootDirectoryChars[512][32];
 root_directory_entry *rootDirectoryPointers[512];
 
+unsigned char dataEntries[16384];
+unsigned char dataChars[512][32];
+root_directory_entry *dataPointers[512];
 
 int fatInit() {
 	int error;
@@ -58,6 +61,7 @@ int fatInit() {
 	} else {
 		esp_printf((void *) putc, "File system type valid\n");
 	}
+	/*
 	int fat_table_start = bs->num_reserved_sectors;
 	fat_table_size = bs->num_sectors_per_fat;
 	esp_printf((void *) putc, "FAT TABLE START = %d\nFAT TABLE SIZE: %d\n", fat_table_start, fat_table_size);
@@ -66,6 +70,7 @@ int fatInit() {
 		esp_printf((void *) putc, "FAT table could not be read\n");
 		return error;
 	}
+	*/
 	//root sector = reserved sectors + hidden sectors + (num fat tables * sectors per fat) 
 	root_sector = (bs->num_fat_tables * bs->num_sectors_per_fat) + bs->num_reserved_sectors + bs->num_hidden_sectors;
 	data_sector = (root_sector + ((bs->num_root_dir_entries * 32) / SECTOR_SIZE));
@@ -87,6 +92,14 @@ int fatInit() {
 		esp_printf((void *) putc, "%x ", rootEntries[i]);
 	}*/
 	error = sd_readblock(0, disk, bs->total_sectors);
+	int fat_table_start = bs->num_reserved_sectors + bs->num_hidden_sectors;
+	fat_table_size = bs->num_sectors_per_fat;
+	esp_printf((void *) putc, "FAT TABLE START = %d\nFAT TABLE SIZE: %d\n", fat_table_start, fat_table_size);
+	error = charArrCpyIndex(fat_table, disk, (fat_table_start * SECTOR_SIZE), ((fat_table_start * SECTOR_SIZE) + (fat_table_size * SECTOR_SIZE))); //read fat-table into fat_table char[]
+	if (error == 0){
+		esp_printf((void *) putc, "FAT table could not be read\n");
+		return error;
+	}
 	return 1;
 }
 
@@ -103,7 +116,8 @@ int fatInit() {
  */
 
 int initFatStructs(){
-	int error = sd_readblock(root_sector, rootDirectoryEntries, root_entries_size);
+	//int error = sd_readblock(root_sector, rootDirectoryEntries, root_entries_size);
+	int error = charArrCpyIndex(rootDirectoryEntries, disk, (root_sector * SECTOR_SIZE), ((root_sector * SECTOR_SIZE) + 16384));
 	if (error == 0){
 		return 0;
 	}
@@ -207,9 +221,6 @@ int fatOpen(file *fle, char *filename){
 		}
 		placementFileIndex++;
 		while ((foundSubFile != 1) && (placementFileIndex <= subDirectIndex)){
-			unsigned char dataEntries[16384];
-			unsigned char dataChars[512][32];
-			root_directory_entry *dataPointers[512];
 			int index, count;
 			index = 0; count = 0;
 			readFromCluster(dataEntries, parentDirectory.cluster, 32);
@@ -338,6 +349,7 @@ int fat_create(char *filename){
 		}
 		root_directory_entry parentDirectory;
 		int foundSubFile = 0;
+		int createFile = 0;
 		int placementFileIndex = 0;
 		for (i = 0; i < 512; i++){
 			root_directory_entry rde = *rootDirectoryPointers[i];
@@ -363,10 +375,7 @@ int fat_create(char *filename){
 			return 1;
 		}
 		placementFileIndex++;
-		while ((foundSubFile != 1) && (placementFileIndex <= subDirectIndex)){
-			unsigned char dataEntries[16384];
-			unsigned char dataChars[512][32];
-			root_directory_entry *dataPointers[512];
+		while ((foundSubFile != 1) && (placementFileIndex <= subDirectIndex) && (createFile != 1)){
 			int index, count;
 			index = 0; count = 0;
 			readFromCluster(dataEntries, parentDirectory.cluster, 32);
@@ -388,6 +397,11 @@ int fat_create(char *filename){
 				char p[11];
 				nullCharArray(p, 11);
 				extension(filen, tempFilename, 8);
+				if (filen[0] == '\0' && placementFileIndex == subDirectIndex){
+					pointer = dataPointers[i];
+					createFile = 1;
+					break;
+				}
 				extension(ext, tempExtension, 3);
 				strncpy(p, filen, 8);
 				if (ext[0] != '\0'){
@@ -411,19 +425,22 @@ int fat_create(char *filename){
 		if (foundSubFile == 1){
 			return 1;
 		}
+		if (createFile != 1){
+			return 1;
+		}
 		char tempName[8];
 		char tempExtension[3];
 		spaceCharArray(tempName, 8);
 		nullCharArray(tempExtension, 3);
-		if (hasSeparator(filename, '.', strlen(filename)) > -1){
-			int index = hasSeparator(filename, '.', strlen(filename));
-			int diff = charArrCpy(tempName, filename, index);
+		if (hasSeparator(placementFile[placementFileIndex], '.', strlen(placementFile[placementFileIndex])) > -1){
+			int index = hasSeparator(placementFile[placementFileIndex], '.', strlen(placementFile[placementFileIndex]));
+			int diff = charArrCpy(tempName, placementFile[placementFileIndex], index);
 			diff++;
 			for (i = diff; i < (diff + 3); i++){
-				tempExtension[i - diff] = filename[i];
+				tempExtension[i - diff] = placementFile[placementFileIndex][i];
 			}
 		} else {
-			charArrCpy(tempName, filename, strlen(filename));
+			charArrCpy(tempName, placementFile[placementFileIndex], strlen(placementFile[placementFileIndex]));
 		}
 		charArrToUpper(tempName, 8);
 		charArrToUpper(tempExtension, 3);
@@ -484,7 +501,8 @@ int fatRead(char* buffer, file* fp, unsigned int length){
 
 void readFromCluster(unsigned char data[], uint16_t clusterNum, unsigned int size){
 	unsigned int dataSector = data_sector + ((clusterNum - 2) * SECTORS_PER_CLUSTER);
-	sd_readblock(dataSector, data, size);
+	//sd_readblock(dataSector, data, size);
+	int error = charArrCpyIndex(data, disk, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + (SECTOR_SIZE * SECTORS_PER_CLUSTER)));
 }
 
 int pathToFileName(char fn[][11], char *path, int length){
