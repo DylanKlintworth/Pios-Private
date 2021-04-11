@@ -30,6 +30,14 @@ int charArrCpyIndex(char a[], char b[], unsigned int startIndex, unsigned int en
     return i;
 }
 
+int charArrCpyIndexOpp(char a[], char b[], unsigned int startIndex, unsigned int endIndex){
+    int i;
+    for (i = startIndex; i < endIndex; i++){
+        a[i] = b[i-startIndex];
+    }
+    return i;
+}
+
 void charArrToUpper(char a[], int length){
     int i;
     for (i = 0; i < length; i++){

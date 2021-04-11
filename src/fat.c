@@ -13,6 +13,7 @@ unsigned char disk[16777216];
 
 unsigned char fat_table[32*SECTOR_SIZE];
 unsigned int fat_table_size;
+unsigned int fat_table_start;
 unsigned char fatTableChars[8192][2];
 fat_table_entry *fatTablePointers[8192];
 
@@ -92,14 +93,6 @@ int fatInit() {
 		esp_printf((void *) putc, "%x ", rootEntries[i]);
 	}*/
 	error = sd_readblock(0, disk, bs->total_sectors);
-	int fat_table_start = bs->num_reserved_sectors + bs->num_hidden_sectors;
-	fat_table_size = bs->num_sectors_per_fat;
-	esp_printf((void *) putc, "FAT TABLE START = %d\nFAT TABLE SIZE: %d\n", fat_table_start, fat_table_size);
-	error = charArrCpyIndex(fat_table, disk, (fat_table_start * SECTOR_SIZE), ((fat_table_start * SECTOR_SIZE) + (fat_table_size * SECTOR_SIZE))); //read fat-table into fat_table char[]
-	if (error == 0){
-		esp_printf((void *) putc, "FAT table could not be read\n");
-		return error;
-	}
 	return 1;
 }
 
@@ -120,6 +113,14 @@ int initFatStructs(){
 	int error = charArrCpyIndex(rootDirectoryEntries, disk, (root_sector * SECTOR_SIZE), ((root_sector * SECTOR_SIZE) + 16384));
 	if (error == 0){
 		return 0;
+	}
+	fat_table_start = bs->num_reserved_sectors + bs->num_hidden_sectors;
+	fat_table_size = bs->num_sectors_per_fat;
+	esp_printf((void *) putc, "FAT TABLE START = %d\nFAT TABLE SIZE: %d\n", fat_table_start, fat_table_size);
+	error = charArrCpyIndex(fat_table, disk, (fat_table_start * SECTOR_SIZE), ((fat_table_start * SECTOR_SIZE) + (fat_table_size * SECTOR_SIZE))); //read fat-table into fat_table char[]
+	if (error == 0){
+		esp_printf((void *) putc, "FAT table could not be read\n");
+		return error;
 	}
 	int i, index, count;
 	index = 0; count = 0;
@@ -499,10 +500,65 @@ int fatRead(char* buffer, file* fp, unsigned int length){
 	return 1;
 }
 
+int fatWrite(file *fp, char *buffer, unsigned int length){
+	uint16_t fpCluster = fp->start_cluster;
+	uint16_t fatValue = fatTablePointers[fpCluster]->entry;
+	if (fatValue >= 0xfff8){
+		unsigned char data[2048];
+		readFromCluster(data, fpCluster, SECTORS_PER_CLUSTER);
+	}
+}
+
 void readFromCluster(unsigned char data[], uint16_t clusterNum, unsigned int size){
 	unsigned int dataSector = data_sector + ((clusterNum - 2) * SECTORS_PER_CLUSTER);
 	//sd_readblock(dataSector, data, size);
 	int error = charArrCpyIndex(data, disk, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + (SECTOR_SIZE * SECTORS_PER_CLUSTER)));
+}
+
+void writeToCluster(char data[], uint16_t clusterNum){
+	unsigned int dataSector = data_sector + ((clusterNum - 2) * SECTORS_PER_CLUSTER);
+	int index;
+	index = 0;
+}
+
+void writeRootDirectory(){
+	char buffer[bs->num_root_dir_entries][ROOT_DIRECTORY_ENTRY_SIZE];
+	char retBuff[bs->num_root_dir_entries * ROOT_DIRECTORY_ENTRY_SIZE];
+	int i,j,index, count;
+	for (i = 0; i < bs->num_root_dir_entries; i++){
+		char data[32];
+		memcpy(data, rootDirectoryPointers[i], sizeof(root_directory_entry));
+		memcpy(buffer[i], data, 32);
+	}
+	index = 0;
+	for (i = 0; i < bs->num_root_dir_entries; i++){
+		for (j = 0; j < 32; j++){
+			retBuff[index] = buffer[i][j];
+			index++;
+		}
+	}
+	int ret = charArrCpyIndexOpp(disk, retBuff, (root_sector * SECTOR_SIZE), ((root_sector * SECTOR_SIZE) + 16384));
+	return ret;
+}
+
+void writeFatTable(){
+	char buffer[((fat_table_size * SECTOR_SIZE) / 2)][sizeof(fat_table_entry)];
+	char retBuff[fat_table_size * SECTOR_SIZE];
+	int i,j,index, count;
+	for (i = 0; i < ((fat_table_size * SECTOR_SIZE) / 2); i++){
+		char data[2];
+		memcpy(data, fatTablePointers[i], sizeof(fat_table_entry));
+		memcpy(buffer[i], data, 2);
+	}
+	index = 0;
+	for (i = 0; i < (fat_table_size * SECTOR_SIZE); i++){
+		for (j = 0; j < 2; j++){
+			retBuff[index] = buffer[i][j];
+			index++;
+		}
+	}
+	int ret = charArrCpyIndexOpp(disk, retBuff, (fat_table_start * SECTOR_SIZE), ((fat_table_start * SECTOR_SIZE) +(fat_table_size * SECTOR_SIZE)));
+	return ret;
 }
 
 int pathToFileName(char fn[][11], char *path, int length){

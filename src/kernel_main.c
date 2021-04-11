@@ -7,24 +7,19 @@
 #include "string.h"
 extern long __bss_start;
 extern long __bss_end;
+extern unsigned char disk[16777216];
+extern fat_table_entry *fatTablePointers[8192];
 void clear_bss();
 void kernel_main() {
-	file fle0, fle1, fle3;
-	char buffer0[100000];
-	char buffer[11000];
-	char buffer2[100];
-	char buffer3[200];
-	char buffer4[100];
 	clear_bss();
 	fatInit();
 	initFatStructs();
-	fat_create("mods");
+	fat_create("mods.txt");
 	fat_create("jazz.txt");
-	fatOpen(&fle1, "mods");
-	fatOpen(&fle0, "jazz.txt");
-	fatOpen(&fle3, "/alan/alan.txt");
-	fatRead(buffer0, &fle3, 95000);
-	esp_printf((void *) putc, "%s\n", buffer0);
+	writeRootDirectory();
+	writeFatTable();
+	initFatStructs();
+	int i;
 	while (1){
 		
 	}
