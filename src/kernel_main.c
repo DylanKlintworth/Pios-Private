@@ -8,18 +8,22 @@
 extern long __bss_start;
 extern long __bss_end;
 extern unsigned char disk[16777216];
-extern fat_table_entry *fatTablePointers[8192];
+extern root_directory_entry *rootDirectoryPointers[512];
 void clear_bss();
 void kernel_main() {
 	clear_bss();
 	fatInit();
-	initFatStructs();
 	fat_create("mods.txt");
-	fat_create("jazz.txt");
-	writeRootDirectory();
-	writeFatTable();
-	initFatStructs();
-	int i;
+	fat_create("/alan/jazz.txt");
+	file file1, file2, file3;
+	fatOpen(&file1, "mods.txt");
+	fatOpen(&file2, "/alan/jazz.txt");
+	int error = fatOpen(&file3, "dylan");
+	char *buffer = "wazzup";
+	fatWrite(&file1, buffer, (strlen(buffer) + 1));
+	char buffer1[100];
+	fatRead(buffer1, &file1, 50);
+	esp_printf((void *) putc, "%s", buffer1);
 	while (1){
 		
 	}

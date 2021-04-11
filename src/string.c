@@ -44,3 +44,11 @@ void charArrToUpper(char a[], int length){
         a[i] = toupper(a[i]);
     }
 }
+
+int strlenSpace(const char *str) {
+    unsigned int len = 0;
+    while(str[len] != ' ') {
+        len++;
+    }
+    return len;
+}

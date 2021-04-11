@@ -26,9 +26,9 @@ unsigned char rootDirectoryEntries[16384];
 unsigned char rootDirectoryChars[512][32];
 root_directory_entry *rootDirectoryPointers[512];
 
-unsigned char dataEntries[16384];
-unsigned char dataChars[512][32];
-root_directory_entry *dataPointers[512];
+unsigned char dataEntries[2048];
+unsigned char dataChars[64][32];
+root_directory_entry *dataPointers[64];
 
 int fatInit() {
 	int error;
@@ -152,6 +152,7 @@ int initFatStructs(){
 }
 
 int fatOpen(file *fle, char *filename){
+	initFatStructs();
 	char placementFile[20][11];
 	int i, fileCount;
 	for (i = 0; i < 20; i++){
@@ -186,6 +187,8 @@ int fatOpen(file *fle, char *filename){
 		if (foundFile != 1){
 			return 0;
 		}
+		writeFatTable();
+		writeRootDirectory();
 	} else if (fileCount > 1){
 		int subDirectIndex;
 		for (i = 0; i < 20; i++){
@@ -224,8 +227,8 @@ int fatOpen(file *fle, char *filename){
 		while ((foundSubFile != 1) && (placementFileIndex <= subDirectIndex)){
 			int index, count;
 			index = 0; count = 0;
-			readFromCluster(dataEntries, parentDirectory.cluster, 32);
-			for (i = 0; i < 512; i++){
+			readFromCluster(dataEntries, parentDirectory.cluster);
+			for (i = 0; i < 2048; i++){
 				if ((i != 0) && (i % 32 == 0)){
 					count++;
 					index = 0;
@@ -233,10 +236,10 @@ int fatOpen(file *fle, char *filename){
 				dataChars[count][index] = dataEntries[i];
 				index++;
 			}
-			for (i = 0; i < 512; i++){
+			for (i = 0; i < 64; i++){
 				dataPointers[i] = (root_directory_entry *) dataChars[i];
 			}
-			for (i = 0; i < 512; i++){
+			for (i = 0; i < 64; i++){
 				root_directory_entry rde = *dataPointers[i];
 				char *tempFilename = rde.file_name;
 				char *tempExtension = rde.file_extension;
@@ -265,13 +268,19 @@ int fatOpen(file *fle, char *filename){
 					}
 				}
 			}
+			if (i == 64){
+				return 1;
+			}
 		}
+		writeFatTable();
+		writeRootDirectory();
 		return 0;
 	}
 	return 1;
 }
 
 int fat_create(char *filename){
+	initFatStructs();
 	char placementFile[20][11];
 	int i, fileCount;
 	for (i = 0; i < 20; i++){
@@ -339,19 +348,26 @@ int fat_create(char *filename){
 			}
 		}
 		pointer->file_size = 0x0;
+		writeFatTable();
+		writeRootDirectory();
 		return 0;
 	} else if (fileCount > 1){
-		int subDirectIndex;
+		//tracks index of ending file e.g in path "/alan/alan.txt" subdirect index = 1 for "alan.txt"
+		int subDirectIndex; 
 		for (i = 0; i < 20; i++){
 			if (placementFile[i][0] == '\0'){
 				subDirectIndex = i-1;
 				break;
 			}
 		}
-		root_directory_entry parentDirectory;
-		int foundSubFile = 0;
-		int createFile = 0;
-		int placementFileIndex = 0;
+		root_directory_entry parentDirectory; //used to iterate through directory structure
+		int foundSubFile = 0; //the ending file has been found at subDirectIndex
+		int createFile = 0; //if in correct parent directory, this turns to 0 if pointer is a null file
+		int placementFileIndex = 0; //used to iterate through path ["alan", "alan.txt"]
+		/* iterate through root directory to find next directory
+		 * if next directory could not be found, return 1
+		 * if found next directory, set parentDirectory to the directory found
+		 * */
 		for (i = 0; i < 512; i++){
 			root_directory_entry rde = *rootDirectoryPointers[i];
 			char *tempFilename = rde.file_name;
@@ -375,12 +391,20 @@ int fat_create(char *filename){
 		if (foundFile != 1){
 			return 1;
 		}
-		placementFileIndex++;
+		placementFileIndex++; //next part of file path
+		//found parent directory
+		/*
+		 * While placementFileIndex isn't the subdirect index, keep looping
+		 * if subFile is found, loop exits as file exists already
+		 * if file does not exist at correct subIndex, set createFile to true and break
+		 * */
 		while ((foundSubFile != 1) && (placementFileIndex <= subDirectIndex) && (createFile != 1)){
 			int index, count;
 			index = 0; count = 0;
-			readFromCluster(dataEntries, parentDirectory.cluster, 32);
-			for (i = 0; i < 512; i++){
+			//read parent directory into dataEntries char array
+			readFromCluster(dataEntries, parentDirectory.cluster);
+			//create 512 strings consisting of parent directory files
+			for (i = 0; i < 2048; i++){
 				if ((i != 0) && (i % 32 == 0)){
 					count++;
 					index = 0;
@@ -388,16 +412,19 @@ int fat_create(char *filename){
 				dataChars[count][index] = dataEntries[i];
 				index++;
 			}
-			for (i = 0; i < 512; i++){
+			//make pointers to those files
+			for (i = 0; i < 64; i++){
 				dataPointers[i] = (root_directory_entry *) dataChars[i];
 			}
-			for (i = 0; i < 512; i++){
+			//loop through each file within parent directory
+			for (i = 0; i < 64; i++){
 				root_directory_entry rde = *dataPointers[i];
 				char *tempFilename = rde.file_name;
 				char *tempExtension = rde.file_extension;
-				char p[11];
+				char p[11]; 
 				nullCharArray(p, 11);
 				extension(filen, tempFilename, 8);
+				//if file name is null and correct index, set pointer
 				if (filen[0] == '\0' && placementFileIndex == subDirectIndex){
 					pointer = dataPointers[i];
 					createFile = 1;
@@ -413,14 +440,20 @@ int fat_create(char *filename){
 				c = strcmp(placementFile[placementFileIndex], p);
 				if (c == 0){
 					if (placementFileIndex == subDirectIndex){
+						//file already exists
 						foundSubFile = 1;
 						break;
 					} else {
+						//directory found, proceed to next directory
 						parentDirectory = rde;
 						placementFileIndex++;
 						break;
 					}
 				}
+			}
+			//if looped through all entries and none are equal, return 1
+			if (i == 64){
+				return 1;
 			}
 		}
 		if (foundSubFile == 1){
@@ -457,26 +490,30 @@ int fat_create(char *filename){
 			}
 		}
 		pointer->file_size = 0x0;
+		writeDataEntries(parentDirectory, dataPointers);
+		writeFatTable();
+		writeRootDirectory();
 		return 0;
 	}
 }
 	
 
 int fatRead(char* buffer, file* fp, unsigned int length){
+	initFatStructs();
 	uint16_t fpCluster = fp->start_cluster;
 	uint16_t fatValue = fatTablePointers[fpCluster]->entry;
 	int i, index;
 	index = 0;
 	if (fatValue >= 0xfff8){
 		unsigned char data[2048];
-		readFromCluster(data, fpCluster, SECTORS_PER_CLUSTER);
+		readFromCluster(data, fpCluster);
 		for (i = 0; i < length; i++){
 			buffer[i] = data[i];
 		}
 	} else if (fatValue < 0xfff8){
 		while (fatValue < 0xfff8){
 			unsigned char data[2048];
-			readFromCluster(data, fpCluster, SECTORS_PER_CLUSTER);
+			readFromCluster(data, fpCluster);
 			for (i = 0; i < 2048; i++){
 				if (index == length){
 					return 1;
@@ -488,7 +525,7 @@ int fatRead(char* buffer, file* fp, unsigned int length){
 			fatValue = fatTablePointers[fpCluster]->entry;
 		}
 		unsigned char data[2048];
-		readFromCluster(data, fpCluster, SECTORS_PER_CLUSTER);
+		readFromCluster(data, fpCluster);
 		for (i = 0; i < 2048; i++){
 			if (index == length){
 				return 1;
@@ -501,24 +538,35 @@ int fatRead(char* buffer, file* fp, unsigned int length){
 }
 
 int fatWrite(file *fp, char *buffer, unsigned int length){
+	initFatStructs();
 	uint16_t fpCluster = fp->start_cluster;
 	uint16_t fatValue = fatTablePointers[fpCluster]->entry;
 	if (fatValue >= 0xfff8){
-		unsigned char data[2048];
-		readFromCluster(data, fpCluster, SECTORS_PER_CLUSTER);
+		writeToCluster(buffer, fpCluster, length);
+		writeFatTable();
+		writeRootDirectory();
+		return 0;
+	} else if (fatValue < 0xfff8) {
+		while (fatValue < 0xfff8){
+			fpCluster = fatValue;
+			fatValue = fatTablePointers[fpCluster]->entry;
+		}
+		writeToCluster(buffer, fpCluster, length);
+		writeFatTable();
+		writeRootDirectory();
+		return 0;
 	}
 }
 
-void readFromCluster(unsigned char data[], uint16_t clusterNum, unsigned int size){
+void readFromCluster(unsigned char data[], uint16_t clusterNum){
 	unsigned int dataSector = data_sector + ((clusterNum - 2) * SECTORS_PER_CLUSTER);
 	//sd_readblock(dataSector, data, size);
 	int error = charArrCpyIndex(data, disk, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + (SECTOR_SIZE * SECTORS_PER_CLUSTER)));
 }
 
-void writeToCluster(char data[], uint16_t clusterNum){
+void writeToCluster(char data[], uint16_t clusterNum, unsigned int size){
 	unsigned int dataSector = data_sector + ((clusterNum - 2) * SECTORS_PER_CLUSTER);
-	int index;
-	index = 0;
+	int error = charArrCpyIndexOpp(disk, data, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + size));
 }
 
 void writeRootDirectory(){
@@ -538,7 +586,6 @@ void writeRootDirectory(){
 		}
 	}
 	int ret = charArrCpyIndexOpp(disk, retBuff, (root_sector * SECTOR_SIZE), ((root_sector * SECTOR_SIZE) + 16384));
-	return ret;
 }
 
 void writeFatTable(){
@@ -558,7 +605,26 @@ void writeFatTable(){
 		}
 	}
 	int ret = charArrCpyIndexOpp(disk, retBuff, (fat_table_start * SECTOR_SIZE), ((fat_table_start * SECTOR_SIZE) +(fat_table_size * SECTOR_SIZE)));
-	return ret;
+}
+
+void writeDataEntries(root_directory_entry parentDirectory, root_directory_entry *entries[]){
+	char buffer[64][ROOT_DIRECTORY_ENTRY_SIZE];
+	char retBuff[64 * ROOT_DIRECTORY_ENTRY_SIZE];
+	int i,j,index, count;
+	for (i = 0; i < 64; i++){
+		char data[32];
+		memcpy(data, entries[i], sizeof(root_directory_entry));
+		memcpy(buffer[i], data, 32);
+	}
+	index = 0;
+	for (i = 0; i < 64; i++){
+		for (j = 0; j < 32; j++){
+			retBuff[index] = buffer[i][j];
+			index++;
+		}
+	}
+	unsigned int dataSector = data_sector + ((parentDirectory.cluster - 2) * SECTORS_PER_CLUSTER);
+	int ret = charArrCpyIndexOpp(disk, retBuff, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + 16384));
 }
 
 int pathToFileName(char fn[][11], char *path, int length){
