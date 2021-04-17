@@ -1,31 +1,63 @@
+SOURCE: en.wikipedia.org/wiki/Alan_Turing
 
-gimme gimme chicken tendies
-gimme gimme chicken tendies
-gimme gimme chicken tendies
-gimme gimme chicken tendies
-gimme gimme chicken tendies
-gimme gimme chicken tendies
-gimme gimme chicken tendies
-gimme gimme chicken tendies
-gimme gimme chicken tendies
-gimme gimme chicken tendies
-This homework was hard
-This homework was hard
-This homework was hard
-This homework was hard
-This homework was hard
-This homework was hard
-This homework was hard
-This homework was hard
-This homework was hard
-This homework was hard
-This homework was hard
-This homework was hard
-This homework was hard
-This homework was hard
-This homework was hard
-This homework was hard
-This homework was hard
-This homework was hard
-This homework was hard
-This homework was hard
+------------------------------------------
+
+This is a good article. Click here for more information. Page semi-protected
+Alan Turing
+From Wikipedia, the free encyclopedia
+Jump to navigationJump to search
+"Turing" redirects here. For other uses, see Turing (disambiguation).
+Alan Turing
+OBE FRS
+Alan Turing Aged 16.jpg
+Turing c. 1928 at age 16
+Born	Alan Mathison Turing
+23 June 1912
+Maida Vale, London, England
+Died	7 June 1954 (aged 41)
+Wilmslow, Cheshire, England
+Cause of death	Suicide (disputed) by cyanide poisoning
+Resting place	Ashes scattered in gardens of Woking Crematorium
+Nationality	British
+Education	Sherborne School
+Alma mater	
+University of Cambridge (BA, MA)
+Princeton University (PhD)
+Known for	
+Cryptanalysis of the Enigma
+Turing's proof
+Turing machine
+Turing test
+Unorganised machine
+Turing pattern
+Turing reduction
+The Chemical Basis of Morphogenesis
+Partner(s)	Joan Clarke
+(engaged in 1941; did not marry)
+Awards	Smith's Prize (1936)
+Scientific career
+Fields	
+Logic
+Mathematics
+Cryptanalysis
+Computer science
+Mathematical and theoretical biology[1]
+Institutions	
+University of Manchester
+Government Code and Cypher School
+National Physical Laboratory
+Thesis	Systems of Logic Based on Ordinals (1938)
+Doctoral advisor	Alonzo Church[2]
+Doctoral students	Robin Gandy,[2][3] Beatrice Worsley[4]
+Influences	Max Newman[5]
+Signature
+Alan Turing signature.svg
+Alan Mathison Turing OBE FRS (/ˈtjʊərɪŋ/; 23 June 1912 – 7 June 1954) was an English mathematician, computer scientist, logician, cryptanalyst, philosopher, and theoretical biologist.[6][7] Turing was highly influential in the development of theoretical computer science, providing a formalisation of the concepts of algorithm and computation with the Turing machine, which can be considered a model of a general-purpose computer.[8][9][10] Turing is widely considered to be the father of theoretical computer science and artificial intelligence.[11] Despite these accomplishments, he was never fully recognised in his home country, if only because much of his work was covered by the Official Secrets Act.
+
+During the Second World War, Turing worked for the Government Code and Cypher School (GC&CS) at Bletchley Park, Britain's codebreaking centre that produced Ultra intelligence. For a time he led Hut 8, the section that was responsible for German naval cryptanalysis. Here, he devised a number of techniques for speeding the breaking of German ciphers, including improvements to the pre-war Polish bombe method, an electromechanical machine that could find settings for the Enigma machine.
+
+Turing played a crucial role in cracking intercepted coded messages that enabled the Allies to defeat the Nazis in many crucial engagements, including the Battle of the Atlantic.[12][13] Due to the problems of counterfactual history, it is hard to estimate the precise effect Ultra intelligence had on the war,[14] but Professor Jack Copeland has estimated that this work shortened the war in Europe by more than two years and saved over 14 million lives.[12]
+
+After the war, Turing worked at the National Physical Laboratory, where he designed the Automatic Computing Engine. The Automatic Computing Engine was one of the first designs for a stored-program computer. In 1948, Turing joined Max Newman's Computing Machine Laboratory, at the Victoria University of Manchester, where he helped develop the Manchester computers[15] and became interested in mathematical biology. He wrote a paper on the chemical basis of morphogenesis[1] and predicted oscillating chemical reactions such as the Belousov–Zhabotinsky reaction, first observed in the 1960s.
+
+Turing was prosecuted in 1952 for homosexual acts; the Labouchere Amendment of 1885 had mandated that "gross indecency" was a criminal offence in the UK. He accepted chemical castration treatment, with DES, as an alternative to prison. Turing died in 1954, 16 days before his 42nd birthday, from cyanide poisoning. An inquest

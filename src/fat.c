@@ -279,7 +279,7 @@ int fatOpen(file *fle, char *filename){
 	return 1;
 }
 
-int fat_create(char *filename){
+int fatCreate(char *filename){
 	initFatStructs();
 	char placementFile[20][11];
 	int i, fileCount;
@@ -536,39 +536,118 @@ int fatRead(char* buffer, file* fp, unsigned int length){
 	}
 	return 1;
 }
-
-int fatWrite(file *fp, char *buffer, unsigned int length){
+/*
+ * Write a buffer to a file 
+ */
+int fatWrite(file *fp, char *buffer){
 	initFatStructs();
+	// cluster is the file's starting cluster
 	uint16_t fpCluster = fp->start_cluster;
+	//fatValue is the value of the entry at the cluster location in the FAT table
 	uint16_t fatValue = fatTablePointers[fpCluster]->entry;
-	if (fatValue >= 0xfff8){
-		writeToCluster(buffer, fpCluster, length);
-		writeFatTable();
-		writeRootDirectory();
-		return 0;
-	} else if (fatValue < 0xfff8) {
+	unsigned int length = strlen(buffer) + 1;
+	unsigned int clustersNeeded = (length / CLUSTER_SIZE) + 1;
+	char sectors[clustersNeeded][2048];
+	if (clustersNeeded > 1){
 		while (fatValue < 0xfff8){
+			char tempBuffer[2048];
+			nullCharArray(tempBuffer, 2048);
+			writeToCluster(tempBuffer, fpCluster, 2048);
+			fatTablePointers[fpCluster]->entry = 0x0;
 			fpCluster = fatValue;
 			fatValue = fatTablePointers[fpCluster]->entry;
 		}
-		writeToCluster(buffer, fpCluster, length);
+		// fatValue now > 0xfff8
+		int i, index, count;
+		i = 0; index = 0; count = 0;
+		while (i < (clustersNeeded * CLUSTER_SIZE)){
+			if (((i % 2048) == 0) && (i != 0)){
+				count++;
+				index = 0;
+			}
+			sectors[count][index] = buffer[i];
+			index++;
+			i++;
+		}
+		for (i = 0; i < clustersNeeded; i++){
+			if (i == 0){
+				fp->start_cluster = fpCluster;
+				fp->rde.cluster = fpCluster;
+				int nextCluster = unallocatedFatTableIndex();
+				fatTablePointers[fpCluster]->entry = nextCluster;
+				char tempBuffer[2048];
+				nullCharArray(tempBuffer, 2048);
+				writeToCluster(tempBuffer, fpCluster, 2048);
+				writeToCluster(sectors[i], fpCluster, (strlen(buffer)+1));
+				fpCluster = nextCluster;
+			} else if (i == (clustersNeeded-1)) {
+				fatTablePointers[fpCluster]->entry = 0xfff8;
+				char tempBuffer[2048];
+				nullCharArray(tempBuffer, 2048);
+				writeToCluster(tempBuffer, fpCluster, 2048);
+				writeToCluster(sectors[i], fpCluster, (strlen(buffer)+1));
+			} else {
+				int nextCluster = unallocatedFatTableIndex();
+				fatTablePointers[fpCluster]->entry = nextCluster;
+				char tempBuffer[2048];
+				nullCharArray(tempBuffer, 2048);
+				writeToCluster(tempBuffer, fpCluster, 2048);
+				writeToCluster(sectors[i], fpCluster, (strlen(buffer)+1));
+				fpCluster = nextCluster;
+			}
+		}
+		fp->rde.file_size = (strlen(buffer) + 1);
+		writeFatTable();
+		writeRootDirectory();
+		return 0;
+	} else if (clustersNeeded == 1){
+		while (fatValue < 0xfff8){
+			char tempBuffer[2048];
+			nullCharArray(tempBuffer, 2048);
+			writeToCluster(tempBuffer, fpCluster, 2048);
+			fatTablePointers[fpCluster]->entry = 0x0;
+			fpCluster = fatValue;
+			fatValue = fatTablePointers[fpCluster]->entry;
+		}
+		char tempBuffer[2048];
+		nullCharArray(tempBuffer, 2048);
+		writeToCluster(tempBuffer, fpCluster, 2048);
+		writeToCluster(buffer, fpCluster, (strlen(buffer)+1));
+		fp->start_cluster = fpCluster;
+		fp->rde.cluster = fpCluster;
+		fp->rde.file_size = strlen(buffer) + 1;
+		fatTablePointers[fpCluster]->entry = 0xfff8;
 		writeFatTable();
 		writeRootDirectory();
 		return 0;
 	}
+	return 1;
 }
 
+// Return index of fat table entry with value of 0
+int unallocatedFatTableIndex(){
+	int i;
+	for (i = 0; i < 8192; i++){
+		fat_table_entry *fte = fatTablePointers[i];
+		if (fte->entry == 0x0){
+			return i;
+		}
+	}
+	return -1;
+}
+
+// Read from a specified cluster to data buffer
 void readFromCluster(unsigned char data[], uint16_t clusterNum){
 	unsigned int dataSector = data_sector + ((clusterNum - 2) * SECTORS_PER_CLUSTER);
 	//sd_readblock(dataSector, data, size);
 	int error = charArrCpyIndex(data, disk, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + (SECTOR_SIZE * SECTORS_PER_CLUSTER)));
 }
-
+// Write N length of a data buffer to the specified cluster
 void writeToCluster(char data[], uint16_t clusterNum, unsigned int size){
 	unsigned int dataSector = data_sector + ((clusterNum - 2) * SECTORS_PER_CLUSTER);
 	int error = charArrCpyIndexOpp(disk, data, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + size));
 }
-
+// Writes the root directory to emulated disk after modification 
 void writeRootDirectory(){
 	char buffer[bs->num_root_dir_entries][ROOT_DIRECTORY_ENTRY_SIZE];
 	char retBuff[bs->num_root_dir_entries * ROOT_DIRECTORY_ENTRY_SIZE];
@@ -587,7 +666,7 @@ void writeRootDirectory(){
 	}
 	int ret = charArrCpyIndexOpp(disk, retBuff, (root_sector * SECTOR_SIZE), ((root_sector * SECTOR_SIZE) + 16384));
 }
-
+// Writes the FAT Table to emulated disk after modification
 void writeFatTable(){
 	char buffer[((fat_table_size * SECTOR_SIZE) / 2)][sizeof(fat_table_entry)];
 	char retBuff[fat_table_size * SECTOR_SIZE];
@@ -606,7 +685,7 @@ void writeFatTable(){
 	}
 	int ret = charArrCpyIndexOpp(disk, retBuff, (fat_table_start * SECTOR_SIZE), ((fat_table_start * SECTOR_SIZE) +(fat_table_size * SECTOR_SIZE)));
 }
-
+// Writes a specified directories directory entries to emulated disk
 void writeDataEntries(root_directory_entry parentDirectory, root_directory_entry *entries[]){
 	char buffer[64][ROOT_DIRECTORY_ENTRY_SIZE];
 	char retBuff[64 * ROOT_DIRECTORY_ENTRY_SIZE];
@@ -626,7 +705,8 @@ void writeDataEntries(root_directory_entry parentDirectory, root_directory_entry
 	unsigned int dataSector = data_sector + ((parentDirectory.cluster - 2) * SECTORS_PER_CLUSTER);
 	int ret = charArrCpyIndexOpp(disk, retBuff, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + 16384));
 }
-
+// Adds filenames within a path to an array of strings
+// ex. "/boot/kernel8.elf" -> ["boot", "kernel8.elf"]
 int pathToFileName(char fn[][11], char *path, int length){
 	int i, count, index;
 	count = 0;
@@ -646,21 +726,21 @@ int pathToFileName(char fn[][11], char *path, int length){
 	}
 	return count + 1;
 }	
-
+// Converts a buffer to nulls up to N length
 void nullCharArray(char arr[], int length){
 	int i;
 	for (i = 0; i < length; i++){
 		arr[i] = '\0';
 	}
 }
-
+// Converts a buffer to spaces up to N length
 void spaceCharArray(char arr[], int length){
 	int i;
 	for (i = 0; i < length; i++){
 		arr[i] = ' ';
 	}
 }
-
+// Checks if char is separator
 int isSeparator(char c, char sep){
     if (c == sep){
         return 1;
@@ -668,7 +748,7 @@ int isSeparator(char c, char sep){
         return 0;
     }
 }
-
+// Returns the index of a separator char in a string, -1 is it doesn't exist
 int hasSeparator(char arr[], char sep, unsigned int length){
 	int i;
 	int ret = -1;
@@ -680,7 +760,7 @@ int hasSeparator(char arr[], char sep, unsigned int length){
 	}
 	return ret;
 }
-
+// Converts FAT filename/extension to string compatible format
 void extension(char a[], char b[], unsigned int length){
 	int i;
 	for (i = 0; i < length; i++){
@@ -691,7 +771,7 @@ void extension(char a[], char b[], unsigned int length){
 		}
 	}
 }
-
+// Prints a buffer
 void printCharArray(char arr[], unsigned int length){
 	int i;
 	for (i = 0; i < length; i++){
