@@ -13,7 +13,6 @@ void kernel_main() {
 	clear_bss();
 	fatInit();
 	file file1, file2, file3;
-	int i;
 	fatOpen(&file1, "/whatis/this/file.txt");
 	char buffer[4000];
 	fatRead(buffer, &file1, 4000);

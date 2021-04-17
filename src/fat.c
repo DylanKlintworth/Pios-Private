@@ -110,14 +110,14 @@ int fatInit() {
 
 int initFatStructs(){
 	//int error = sd_readblock(root_sector, rootDirectoryEntries, root_entries_size);
-	int error = charArrCpyIndex(rootDirectoryEntries, disk, (root_sector * SECTOR_SIZE), ((root_sector * SECTOR_SIZE) + 16384));
+	int error = charArrCpyIndex((char *) rootDirectoryEntries, (char *) disk, (root_sector * SECTOR_SIZE), ((root_sector * SECTOR_SIZE) + 16384));
 	if (error == 0){
 		return 0;
 	}
 	fat_table_start = bs->num_reserved_sectors + bs->num_hidden_sectors;
 	fat_table_size = bs->num_sectors_per_fat;
 	esp_printf((void *) putc, "FAT TABLE START = %d\nFAT TABLE SIZE: %d\n", fat_table_start, fat_table_size);
-	error = charArrCpyIndex(fat_table, disk, (fat_table_start * SECTOR_SIZE), ((fat_table_start * SECTOR_SIZE) + (fat_table_size * SECTOR_SIZE))); //read fat-table into fat_table char[]
+	error = charArrCpyIndex((char *) fat_table, (char *) disk, (fat_table_start * SECTOR_SIZE), ((fat_table_start * SECTOR_SIZE) + (fat_table_size * SECTOR_SIZE))); //read fat-table into fat_table char[]
 	if (error == 0){
 		esp_printf((void *) putc, "FAT table could not be read\n");
 		return error;
@@ -495,6 +495,7 @@ int fatCreate(char *filename){
 		writeRootDirectory();
 		return 0;
 	}
+	return 1;
 }
 	
 
@@ -640,18 +641,18 @@ int unallocatedFatTableIndex(){
 void readFromCluster(unsigned char data[], uint16_t clusterNum){
 	unsigned int dataSector = data_sector + ((clusterNum - 2) * SECTORS_PER_CLUSTER);
 	//sd_readblock(dataSector, data, size);
-	int error = charArrCpyIndex(data, disk, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + (SECTOR_SIZE * SECTORS_PER_CLUSTER)));
+	charArrCpyIndex((char *) data, (char *) disk, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + (SECTOR_SIZE * SECTORS_PER_CLUSTER)));
 }
 // Write N length of a data buffer to the specified cluster
 void writeToCluster(char data[], uint16_t clusterNum, unsigned int size){
 	unsigned int dataSector = data_sector + ((clusterNum - 2) * SECTORS_PER_CLUSTER);
-	int error = charArrCpyIndexOpp(disk, data, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + size));
+	charArrCpyIndexOpp((char *) disk, (char *) data, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + size));
 }
 // Writes the root directory to emulated disk after modification 
 void writeRootDirectory(){
 	char buffer[bs->num_root_dir_entries][ROOT_DIRECTORY_ENTRY_SIZE];
 	char retBuff[bs->num_root_dir_entries * ROOT_DIRECTORY_ENTRY_SIZE];
-	int i,j,index, count;
+	int i,j,index;
 	for (i = 0; i < bs->num_root_dir_entries; i++){
 		char data[32];
 		memcpy(data, rootDirectoryPointers[i], sizeof(root_directory_entry));
@@ -664,13 +665,13 @@ void writeRootDirectory(){
 			index++;
 		}
 	}
-	int ret = charArrCpyIndexOpp(disk, retBuff, (root_sector * SECTOR_SIZE), ((root_sector * SECTOR_SIZE) + 16384));
+	charArrCpyIndexOpp((char *) disk, (char *) retBuff, (root_sector * SECTOR_SIZE), ((root_sector * SECTOR_SIZE) + 16384));
 }
 // Writes the FAT Table to emulated disk after modification
 void writeFatTable(){
 	char buffer[((fat_table_size * SECTOR_SIZE) / 2)][sizeof(fat_table_entry)];
 	char retBuff[fat_table_size * SECTOR_SIZE];
-	int i,j,index, count;
+	int i,j,index;
 	for (i = 0; i < ((fat_table_size * SECTOR_SIZE) / 2); i++){
 		char data[2];
 		memcpy(data, fatTablePointers[i], sizeof(fat_table_entry));
@@ -683,13 +684,13 @@ void writeFatTable(){
 			index++;
 		}
 	}
-	int ret = charArrCpyIndexOpp(disk, retBuff, (fat_table_start * SECTOR_SIZE), ((fat_table_start * SECTOR_SIZE) +(fat_table_size * SECTOR_SIZE)));
+	charArrCpyIndexOpp((char *)disk, (char *) retBuff, (fat_table_start * SECTOR_SIZE), ((fat_table_start * SECTOR_SIZE) +(fat_table_size * SECTOR_SIZE)));
 }
 // Writes a specified directories directory entries to emulated disk
 void writeDataEntries(root_directory_entry parentDirectory, root_directory_entry *entries[]){
 	char buffer[64][ROOT_DIRECTORY_ENTRY_SIZE];
 	char retBuff[64 * ROOT_DIRECTORY_ENTRY_SIZE];
-	int i,j,index, count;
+	int i,j,index;
 	for (i = 0; i < 64; i++){
 		char data[32];
 		memcpy(data, entries[i], sizeof(root_directory_entry));
@@ -703,7 +704,7 @@ void writeDataEntries(root_directory_entry parentDirectory, root_directory_entry
 		}
 	}
 	unsigned int dataSector = data_sector + ((parentDirectory.cluster - 2) * SECTORS_PER_CLUSTER);
-	int ret = charArrCpyIndexOpp(disk, retBuff, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + 16384));
+	charArrCpyIndexOpp((char *) disk, (char *) retBuff, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + 16384));
 }
 // Adds filenames within a path to an array of strings
 // ex. "/boot/kernel8.elf" -> ["boot", "kernel8.elf"]
