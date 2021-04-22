@@ -5,13 +5,15 @@
 #include "rprintf.h"
 #include "fat.h"
 #include "string.h"
+#include "parse.h"
 extern long __bss_start;
 extern long __bss_end;
-extern fat_table_entry *fatTablePointers[8192];
+extern parseArguments[NUMARGS][ARGLENGTH];
 void clear_bss();
 void kernel_main() {
 	clear_bss();
 	fatInit();
+	/*
 	file file1, file2, file3;
 	fatOpen(&file1, "/whatis/this/file.txt");
 	char buffer[4000];
@@ -24,6 +26,10 @@ void kernel_main() {
 	char buffer2[4000];
 	fatRead(buffer2, &file3, 4000);
 	esp_printf((void *) putc, "%s", buffer2);
+	*/
+	char *buffer = "mkdir -rpa /modder/rodder/jazz.txt";
+	initParseArguments();
+	bufferToArgs(buffer);
 	while (1){
 		
 	}

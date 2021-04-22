@@ -1,8 +1,6 @@
-
+#include <stdint.h>
 #ifndef __FAT_H__
 #define __FAT_H__
-
-#include <stdint.h>
 
 #define CLUSTER_SIZE 2048
 #define SECTOR_SIZE 512

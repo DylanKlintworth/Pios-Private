@@ -23,6 +23,7 @@ OBJS = \
 	clibfuncs.o \
 	string.o \
 	fat.o \
+	parse.o \
 
 OBJ = $(patsubst %,$(ODIR)/%,$(OBJS))
 
