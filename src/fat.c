@@ -150,7 +150,12 @@ int initFatStructs(){
 	}
 	return 1;
 }
-
+/*
+	Return 0 if file has been found and opened.
+	Return 1 if directory could not be found in root directory.
+	Return 2 if subdirectory could not be found.
+	Return 3 if path given does not contain a valid path
+*/
 int fatOpen(file *fle, char *filename){
 	initFatStructs();
 	char placementFile[20][11];
@@ -185,7 +190,7 @@ int fatOpen(file *fle, char *filename){
 			}
 		}
 		if (foundFile != 1){
-			return 0;
+			return 1;
 		}
 		writeFatTable();
 		writeRootDirectory();
@@ -221,7 +226,7 @@ int fatOpen(file *fle, char *filename){
 			}
 		}
 		if (foundFile != 1){
-			return 0;
+			return 1;
 		}
 		placementFileIndex++;
 		while ((foundSubFile != 1) && (placementFileIndex <= subDirectIndex)){
@@ -269,14 +274,14 @@ int fatOpen(file *fle, char *filename){
 				}
 			}
 			if (i == 64){
-				return 1;
+				return 2;
 			}
 		}
 		writeFatTable();
 		writeRootDirectory();
 		return 0;
 	}
-	return 1;
+	return 3;
 }
 
 int fatCreate(char *filename){

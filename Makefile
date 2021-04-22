@@ -24,6 +24,8 @@ OBJS = \
 	string.o \
 	fat.o \
 	parse.o \
+	command.o \
+	environment.o \
 
 OBJ = $(patsubst %,$(ODIR)/%,$(OBJS))
 
