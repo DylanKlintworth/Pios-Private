@@ -8,7 +8,7 @@
 #include "parse.h"
 extern long __bss_start;
 extern long __bss_end;
-extern parseArguments[NUMARGS][ARGLENGTH];
+extern char parseArguments[NUMARGS][ARGLENGTH];
 void clear_bss();
 void kernel_main() {
 	clear_bss();
