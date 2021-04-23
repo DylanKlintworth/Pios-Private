@@ -11,8 +11,15 @@ extern char parseArguments[NUMARGS][ARGLENGTH];
 command commandList[1] = {{"touch", 1, 1}};
 
 int executeCommand(){
-    switch (parseArguments[0]){
-        case "touch":
+    int size = sizeof(commandList)/sizeof(command);
+    int i;
+    for (i = 0; i < size; i++){
+        if (strcmp(parseArguments[0], commandList[i].commandName) == 0){
+            break;
+        }
+    }
+    switch (i){
+        case 0:
             touch(parseArguments[1]);
             break;
         default:
