@@ -53,7 +53,7 @@ int touch(char path[]){
             esp_printf((void *) putc, "File path given is not valid\n");
             break;
         default:
-            esp_printf((void *) putc, "File created.\n");
+            esp_printf((void *) putc, "%s created.\n", path);
             break;
     }
     return result;
