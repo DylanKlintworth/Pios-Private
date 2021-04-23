@@ -13,7 +13,6 @@ extern long __bss_end;
 extern char parseArguments[NUMARGS][ARGLENGTH];
 void clear_bss();
 void kernel_main() {
-	clear_bss();
 	fatInit();
 	/*
 	file file1, file2, file3;
@@ -30,9 +29,10 @@ void kernel_main() {
 	esp_printf((void *) putc, "%s", buffer2);
 	*/
 	initEnvironment();
-	touch("mods.txt");
-	touch("/modders/mods.txt");
-	touch("/alan/alan.txt");
+	char *buffs = "touch mods.txt";
+	initParseArguments();
+	bufferToArgs(buffs);
+	executeCommand();
 	while (1){
 		
 	}

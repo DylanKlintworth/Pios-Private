@@ -116,7 +116,7 @@ int initFatStructs(){
 	}
 	fat_table_start = bs->num_reserved_sectors + bs->num_hidden_sectors;
 	fat_table_size = bs->num_sectors_per_fat;
-	esp_printf((void *) putc, "FAT TABLE START = %d\nFAT TABLE SIZE: %d\n", fat_table_start, fat_table_size);
+	//esp_printf((void *) putc, "FAT TABLE START = %d\nFAT TABLE SIZE: %d\n", fat_table_start, fat_table_size);
 	error = charArrCpyIndex((char *) fat_table, (char *) disk, (fat_table_start * SECTOR_SIZE), ((fat_table_start * SECTOR_SIZE) + (fat_table_size * SECTOR_SIZE))); //read fat-table into fat_table char[]
 	if (error == 0){
 		esp_printf((void *) putc, "FAT table could not be read\n");

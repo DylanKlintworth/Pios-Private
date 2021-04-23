@@ -2,6 +2,24 @@
 #include "fat.h"
 #include "rprintf.h"
 #include "serial.h"
+#include "string.h"
+#include "clibfuncs.h"
+#include "parse.h"
+
+extern char parseArguments[NUMARGS][ARGLENGTH];
+
+command commandList[1] = {{"touch", 1, 1}};
+
+int executeCommand(){
+    int size = (sizeof(commandList)/sizeof(command));
+    int i;
+    for (i = 0; i < size; i++){
+        if (strcmp(parseArguments[0], commandList[i].commandName) == 0){
+            esp_printf((void *) putc, "%s equals %s\n", parseArguments[0], commandList[i].commandName);
+        }
+    }
+}
+
 void ls(char path[]){
     if (path[0] == '\0'){
 
