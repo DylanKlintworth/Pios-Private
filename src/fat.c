@@ -283,7 +283,14 @@ int fatOpen(file *fle, char *filename){
 	}
 	return 3;
 }
-
+/*
+	Return 0 if file has been created.
+	Return 1 if file is found in root directory.
+	Return 2 if subdirectory could not be found.
+	Return 3 if file found in subdirectory
+	Return 4 if file could not be created for specified path.
+	Return 5 if path given is not a valid path
+*/
 int fatCreate(char *filename){
 	initFatStructs();
 	char placementFile[20][11];
@@ -458,14 +465,14 @@ int fatCreate(char *filename){
 			}
 			//if looped through all entries and none are equal, return 1
 			if (i == 64){
-				return 1;
+				return 2;
 			}
 		}
 		if (foundSubFile == 1){
-			return 1;
+			return 3;
 		}
 		if (createFile != 1){
-			return 1;
+			return 4;
 		}
 		char tempName[8];
 		char tempExtension[3];
@@ -500,7 +507,7 @@ int fatCreate(char *filename){
 		writeRootDirectory();
 		return 0;
 	}
-	return 1;
+	return 5;
 }
 	
 

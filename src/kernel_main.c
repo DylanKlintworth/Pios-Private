@@ -30,6 +30,9 @@ void kernel_main() {
 	esp_printf((void *) putc, "%s", buffer2);
 	*/
 	initEnvironment();
+	touch("mods.txt");
+	touch("/modders/mods.txt");
+	touch("/alan/alan.txt");
 	while (1){
 		
 	}
