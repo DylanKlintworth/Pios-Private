@@ -7,8 +7,9 @@
 #include "parse.h"
 
 extern char parseArguments[NUMARGS][ARGLENGTH];
+extern root_directory_entry *rootDirectoryPointers[512];
 
-command commandList[1] = {{"touch", 1, 1}};
+command commandList[1] = {{"touch", 1, 1}, {"ls", 1, 1}};
 
 int executeCommand(){
     int size = sizeof(commandList)/sizeof(command);
@@ -22,8 +23,11 @@ int executeCommand(){
         case 0:
             touch(parseArguments[1]);
             break;
+        case 1:
+            ls(parseArguments[1]);
+            break;
         default:
-        return 1;
+            return 1;
             break;
     }
     initParseArguments();
@@ -31,8 +35,26 @@ int executeCommand(){
 }
 
 void ls(char path[]){
-    if (path[0] == '\0'){
-
+    int i;
+    if (strcmp("/", path) == 0){
+        for (i = 0; i < 512; i++){
+            if (!(rootDirectoryPointers[i]->file_name[0] == '\0')){
+                root_directory_entry rde = *rootDirectoryPointers[i];
+                char *tempFilename = rde.file_name;
+                char *tempExtension = rde.file_extension;
+                char path[11];
+                char filen[8];
+                char ext[3];
+                extension(filen, tempFilename, 8);
+                extension(ext, tempExtension, 3);
+                strncpy(path, filen, 8);
+                if (ext[0] != '\0'){
+                    strcat(path, ".");
+                    strcat(path, ext);
+                }
+                esp_printf((void *) putc, "%s\n", path);
+            }
+        }
     }
 }
 

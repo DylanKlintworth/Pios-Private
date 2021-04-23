@@ -30,7 +30,7 @@ void kernel_main() {
 	*/
 	initEnvironment();
 	initParseArguments();
-	char *buffs = "touch /alan/alan.txt";
+	char *buffs = "ls /";
 	bufferToArgs(buffs);
 	executeCommand();
 	while (1){
