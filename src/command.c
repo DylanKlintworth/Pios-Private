@@ -23,8 +23,10 @@ int executeCommand(){
             touch(parseArguments[1]);
             break;
         default:
+        return 1;
             break;
     }
+    initParseArguments();
     return 0;
 }
 

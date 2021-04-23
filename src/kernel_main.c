@@ -29,8 +29,8 @@ void kernel_main() {
 	esp_printf((void *) putc, "%s", buffer2);
 	*/
 	initEnvironment();
-	char *buffs = "touch mods.txt";
 	initParseArguments();
+	char *buffs = "touch /alan/alan.txt";
 	bufferToArgs(buffs);
 	executeCommand();
 	while (1){
