@@ -11,13 +11,14 @@ extern char parseArguments[NUMARGS][ARGLENGTH];
 command commandList[1] = {{"touch", 1, 1}};
 
 int executeCommand(){
-    int size = (sizeof(commandList)/sizeof(command));
-    int i;
-    for (i = 0; i < size; i++){
-        if (strcmp(parseArguments[0], commandList[i].commandName) == 0){
-            esp_printf((void *) putc, "%s equals %s\n", parseArguments[0], commandList[i].commandName);
-        }
+    switch (parseArguments[0]){
+        case "touch":
+            touch(parseArguments[1]);
+            break;
+        default:
+            break;
     }
+    return 0;
 }
 
 void ls(char path[]){
