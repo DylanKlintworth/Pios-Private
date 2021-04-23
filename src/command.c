@@ -9,7 +9,7 @@
 extern char parseArguments[NUMARGS][ARGLENGTH];
 extern root_directory_entry *rootDirectoryPointers[512];
 
-command commandList[1] = {{"touch", 1, 1}, {"ls", 1, 1}};
+command commandList[2] = {{"touch", 1, 1}, {"ls", 1, 1}};
 
 int executeCommand(){
     int size = sizeof(commandList)/sizeof(command);
@@ -38,8 +38,12 @@ void ls(char path[]){
     int i;
     if (strcmp("/", path) == 0){
         for (i = 0; i < 512; i++){
-            if (!(rootDirectoryPointers[i]->file_name[0] == '\0')){
-                root_directory_entry rde = *rootDirectoryPointers[i];
+            root_directory_entry rde = *rootDirectoryPointers[i];
+            if (rde.attribute == 15){
+                continue;
+            } else if (rde.file_name[0] == '\0'){
+                continue;
+            } else {
                 char *tempFilename = rde.file_name;
                 char *tempExtension = rde.file_extension;
                 char path[11];
@@ -51,6 +55,11 @@ void ls(char path[]){
                 if (ext[0] != '\0'){
                     strcat(path, ".");
                     strcat(path, ext);
+                }
+                if (rde.attribute == 0x10){
+                    esp_printf((void *) putc, "Directory: ");
+                } else if (rde.attribute == 0x20){
+                    esp_printf((void *) putc, "File: ");
                 }
                 esp_printf((void *) putc, "%s\n", path);
             }

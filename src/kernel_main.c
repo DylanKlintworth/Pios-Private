@@ -28,6 +28,7 @@ void kernel_main() {
 	fatRead(buffer2, &file3, 4000);
 	esp_printf((void *) putc, "%s", buffer2);
 	*/
+	initFatStructs();
 	initEnvironment();
 	initParseArguments();
 	char *buffs = "ls /";
