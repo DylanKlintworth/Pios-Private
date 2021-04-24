@@ -11,7 +11,7 @@ extern char parseArguments[NUMARGS][ARGLENGTH];
 extern char workingDirectory[100];
 extern root_directory_entry *rootDirectoryPointers[512];
 
-command commandList[2] = {{"touch", 1, 1}, {"ls", 1, 1}, {"cd", 1, 1}};
+command commandList[4] = {{"touch", 1, 1}, {"ls", 1, 1}, {"cd", 1, 1}, {"pwd", 1, 1}};
 
 int executeCommand(){
     int size = sizeof(commandList)/sizeof(command);
@@ -27,6 +27,12 @@ int executeCommand(){
             break;
         case 1:
             ls(parseArguments[1]);
+            break;
+        case 2:
+            cd(parseArguments[1]);
+            break;
+        case 3:
+            pwd();
             break;
         default:
             return 1;
@@ -144,4 +150,28 @@ int touch(char path[]){
             break;
     }
     return result;
+}
+
+int cd(char path[]){
+    if (strlen(path) == 0){
+        strcpy(workingDirectory, ROOT_DIRECTORY);
+    } else {
+        int result;
+        file tempFile;
+        result = fatOpen(&tempFile, path);
+        if (result != 0){
+            esp_printf((void *) putc, "Path could not be found.\n");
+            return 1;
+        }
+        if (tempFile.rde.attribute != 0x10){
+            esp_printf((void *) putc, "Path entered is a file, not a directory.\n");
+            return 2;
+        }
+        strcpy(workingDirectory, path);
+        return 0;
+    }
+}
+
+void pwd(){
+    esp_printf((void *) putc, "%s", workingDirectory);
 }

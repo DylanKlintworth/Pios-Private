@@ -12,5 +12,6 @@ typedef struct command command;
 int executeCommand();
 void ls(char path[]);
 int touch(char path[]);
-
+int cd(char path[]);
+void pwd();
 #endif //PIOS_PRIVATE_COMMAND_H

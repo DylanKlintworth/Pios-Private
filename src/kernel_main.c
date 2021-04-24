@@ -33,7 +33,10 @@ void kernel_main() {
 	initFatStructs();
 	initEnvironment();
 	initParseArguments();
-	char *buffs = "ls /modders/mods";
+	char *buffs = "cd";
+	bufferToArgs(buffs);
+	executeCommand();
+	strcpy(buffs, "pwd");
 	bufferToArgs(buffs);
 	executeCommand();
 	while (1){
