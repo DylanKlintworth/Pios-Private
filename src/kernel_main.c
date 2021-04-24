@@ -33,10 +33,13 @@ void kernel_main() {
 	initFatStructs();
 	initEnvironment();
 	initParseArguments();
-	char *buffs = "cd";
+	char *buffs = "cd /alan";
 	bufferToArgs(buffs);
 	executeCommand();
 	strcpy(buffs, "pwd");
+	bufferToArgs(buffs);
+	executeCommand();
+	strcpy(buffs, "ls /boot");
 	bufferToArgs(buffs);
 	executeCommand();
 	while (1){

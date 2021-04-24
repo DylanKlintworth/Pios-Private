@@ -14,4 +14,5 @@ void ls(char path[]);
 int touch(char path[]);
 int cd(char path[]);
 void pwd();
+void cat(char path[]);
 #endif //PIOS_PRIVATE_COMMAND_H

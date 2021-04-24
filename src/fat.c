@@ -185,8 +185,8 @@ int fatOpen(file *fle, char *filename){
 			if (c == 0){
 				fle->rde = rde;
 				fle->start_cluster = rde.cluster;
-				break;
 				foundFile = 1;
+				break;
 			}
 		}
 		if (foundFile != 1){
@@ -194,6 +194,7 @@ int fatOpen(file *fle, char *filename){
 		}
 		writeFatTable();
 		writeRootDirectory();
+		return 0;
 	} else if (fileCount > 1){
 		int subDirectIndex;
 		for (i = 0; i < 20; i++){
