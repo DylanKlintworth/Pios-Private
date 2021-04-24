@@ -188,4 +188,6 @@ void cat(char path[]){
         esp_printf((void *) putc, "Path could not be found.\n");
     }
     char buffer[tempFile.rde.file_size];
+    fatRead(buffer, &tempFile, tempFile.rde.file_size);
+    esp_printf((void *) putc, "%s\n", buffer);
 }
