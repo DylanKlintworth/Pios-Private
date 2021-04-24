@@ -33,7 +33,7 @@ void kernel_main() {
 	initFatStructs();
 	initEnvironment();
 	initParseArguments();
-	char *buffs = "ls /boot/";
+	char *buffs = "ls /boot";
 	bufferToArgs(buffs);
 	executeCommand();
 	while (1){
