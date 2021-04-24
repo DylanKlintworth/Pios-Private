@@ -113,7 +113,6 @@ void ls(char path[]){
                 }
             }
         }
-        esp_printf((void *) putc, "%s\n", path);
     }
 }
 
