@@ -11,7 +11,7 @@ extern char parseArguments[NUMARGS][ARGLENGTH];
 extern char workingDirectory[100];
 extern root_directory_entry *rootDirectoryPointers[512];
 
-command commandList[2] = {{"touch", 1, 1}, {"ls", 1, 1}};
+command commandList[2] = {{"touch", 1, 1}, {"ls", 1, 1}, {"cd", 1, 1}};
 
 int executeCommand(){
     int size = sizeof(commandList)/sizeof(command);
@@ -38,7 +38,7 @@ int executeCommand(){
 
 void ls(char path[]){
     int i;
-    if (strcmp("/", workingDirectory) == 0){
+    if ((strcmp("/", workingDirectory) == 0) && (strlen(path) == 0)){
         for (i = 0; i < 512; i++){
             root_directory_entry rde = *rootDirectoryPointers[i];
             if (rde.attribute == 15){
