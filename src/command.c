@@ -68,7 +68,11 @@ void ls(char path[]){
         }
     } else {
         file tempFile;
-        fatOpen(&tempFile, workingDirectory);
+        if (strlen(path) == 0){
+            fatOpen(&tempFile, workingDirectory);
+        } else {
+            fatOpen(&tempFile, path);
+        }
         if (tempFile.rde.attribute == 0x20){
             char tempFilename[11];
             rootDirectoryToFilename(tempFile.rde, tempFilename);
