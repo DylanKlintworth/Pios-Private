@@ -35,7 +35,6 @@ void kernel_main() {
 	initParseArguments();
 	char *buffs = "ls";
 	bufferToArgs(buffs);
-	strcpy(workingDirectory, "/alan");
 	executeCommand();
 	while (1){
 		
