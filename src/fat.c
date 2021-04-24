@@ -791,3 +791,19 @@ void printCharArray(char arr[], unsigned int length){
 		esp_printf((void *) putc, "%c", arr[i]);
 	}
 }
+
+void rootDirectoryToFilename(root_directory_entry rde, char *buffer){
+	char *tempFilename = rde.file_name;
+	char *tempExtension = rde.file_extension;
+	char path[11];
+	char filen[8];
+	char ext[3];
+	extension(filen, tempFilename, 8);
+	extension(ext, tempExtension, 3);
+	strncpy(path, filen, 8);
+	if (ext[0] != '\0'){
+		strcat(path, ".");
+		strcat(path, ext);
+	}
+	charArrCpy(buffer, path, 11);
+}

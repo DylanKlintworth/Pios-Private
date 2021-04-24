@@ -5,12 +5,14 @@
 #include "rprintf.h"
 #include "fat.h"
 #include "string.h"
+#include "clibfuncs.h"
 #include "parse.h"
 #include "environment.h"
 #include "command.h"
 extern long __bss_start;
 extern long __bss_end;
 extern char parseArguments[NUMARGS][ARGLENGTH];
+extern char workingDirectory[100];
 void clear_bss();
 void kernel_main() {
 	fatInit();
@@ -31,8 +33,9 @@ void kernel_main() {
 	initFatStructs();
 	initEnvironment();
 	initParseArguments();
-	char *buffs = "ls /";
+	char *buffs = "ls";
 	bufferToArgs(buffs);
+	strcpy(workingDirectory, "/alan");
 	executeCommand();
 	while (1){
 		

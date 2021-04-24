@@ -5,8 +5,10 @@
 #include "string.h"
 #include "clibfuncs.h"
 #include "parse.h"
+#include "environment.h"
 
 extern char parseArguments[NUMARGS][ARGLENGTH];
+extern char workingDirectory[100];
 extern root_directory_entry *rootDirectoryPointers[512];
 
 command commandList[2] = {{"touch", 1, 1}, {"ls", 1, 1}};
@@ -36,7 +38,7 @@ int executeCommand(){
 
 void ls(char path[]){
     int i;
-    if (strcmp("/", path) == 0){
+    if (strcmp("/", workingDirectory) == 0){
         for (i = 0; i < 512; i++){
             root_directory_entry rde = *rootDirectoryPointers[i];
             if (rde.attribute == 15){
@@ -64,6 +66,50 @@ void ls(char path[]){
                 esp_printf((void *) putc, "%s\n", path);
             }
         }
+    } else {
+        file tempFile;
+        fatOpen(&tempFile, workingDirectory);
+        if (tempFile.rde.attribute == 0x20){
+            char tempFilename[11];
+            rootDirectoryToFilename(tempFile.rde, tempFilename);
+            esp_printf((void *) putc, "File: %s\n", tempFilename);
+        } else if (tempFile.rde.attribute == 0x10){
+            unsigned char tempEntries[2048];
+            unsigned char tempChars[64][32];
+            root_directory_entry *tempPointers[64];
+            readFromCluster(tempEntries, tempFile.start_cluster);
+            int count, index;
+            count = 0; index = 0;
+            for (i = 0; i < 2048; i++){
+                if (i != 0 && (i % 32 == 0)){
+                    count++;
+                    index = 0;
+                }
+                tempChars[count][index] = tempEntries[i];
+                index++;
+            }
+            for (i = 0; i < 64; i++){
+                tempPointers[i] = (root_directory_entry *) tempChars[i];
+            }
+            for (i = 0; i < 64; i++){
+                root_directory_entry rde = *tempPointers[i];
+                if (rde.attribute == 15){
+                    continue;
+                } else if (rde.file_name[0] == '\0'){
+                    continue;
+                } else {
+                    char tempFilename[11];
+                    rootDirectoryToFilename(rde, tempFilename);
+                    if (rde.attribute == 0x10){
+                        esp_printf((void *) putc, "Directory: ");
+                    } else if (rde.attribute == 0x20){
+                        esp_printf((void *) putc, "File: ");
+                    }
+                    esp_printf((void *) putc, "%s\n", tempFilename);
+                }
+            }
+        }
+        esp_printf((void *) putc, "%s\n", path);
     }
 }
 

@@ -110,4 +110,5 @@ void oppositeExtension(char a[], char b[], char c[]);
 void readFromCluster(unsigned char data[], uint16_t clusterNum);
 void writeToCluster(char data[], uint16_t clusterNum, unsigned int size);
 void printCharArray(char arr[], unsigned int length);
+void rootDirectoryToFilename(root_directory_entry rde, char *buffer);
 #endif
