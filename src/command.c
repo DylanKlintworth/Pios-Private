@@ -68,10 +68,15 @@ void ls(char path[]){
         }
     } else {
         file tempFile;
+        int result;
         if (strlen(path) == 0){
-            fatOpen(&tempFile, workingDirectory);
+            result = fatOpen(&tempFile, workingDirectory);
         } else {
-            fatOpen(&tempFile, path);
+            result = fatOpen(&tempFile, path);
+        }
+        if (result != 0){
+            esp_printf((void *) putc, "Path could not be found.\n");
+            return;
         }
         if (tempFile.rde.attribute == 0x20){
             char tempFilename[11];
