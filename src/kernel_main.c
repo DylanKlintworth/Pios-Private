@@ -42,6 +42,9 @@ void kernel_main() {
 	strcpy(buffs, "ls /boot");
 	bufferToArgs(buffs);
 	executeCommand();
+	strcpy(buffs, "cat /alan/alan.txt");
+	bufferToArgs(buffs);
+	executeCommand();
 	while (1){
 		
 	}
