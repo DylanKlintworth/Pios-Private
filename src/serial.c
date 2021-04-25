@@ -6,7 +6,7 @@ void putc(int data){
 	*mu_io = data;
 }
 
-void getc(char buffer[]){
+uint32_t getc(){
 	uint32_t *mu_io	= (uint32_t *) RPI3_MU_IO;
-	buffer[0] = *mu_io;
+	return *mu_io;
 }

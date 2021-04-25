@@ -45,8 +45,9 @@ void kernel_main() {
 	strcpy(buffs, "cat /alan/alan.txt");
 	bufferToArgs(buffs);
 	executeCommand();
+	putc(20);
 	while (1){
-		
+		putc(getc());
 	}
 }
 
