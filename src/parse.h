@@ -6,4 +6,5 @@
 	void bufferToArgs(char buffer[]);
 	unsigned int numberArguments(char *buffer);
 	unsigned int longestBufferLength(char *buffer);
+	void inputToBuffer(char *buffer, unsigned int length);
 #endif

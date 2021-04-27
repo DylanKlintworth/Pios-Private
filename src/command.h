@@ -3,8 +3,6 @@
 
 struct command {
     char commandName[100];
-    int acceptsArguments;
-    int numberArguments;
 };
 
 typedef struct command command;
@@ -14,5 +12,8 @@ void ls(char path[]);
 int touch(char path[]);
 int cd(char path[]);
 void pwd();
-void cat(char path[]);
+int cat(char path[]);
+int mkdir(char path[]);
+int help();
+int echo(char buffer[], char redirection[]);
 #endif //PIOS_PRIVATE_COMMAND_H

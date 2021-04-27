@@ -17,6 +17,7 @@ OBJS = \
 	kernel_main.o \
 	list.o \
 	delays.o \
+	delay.o \
 	serial.o \
 	rprintf.o \
 	sd.o \

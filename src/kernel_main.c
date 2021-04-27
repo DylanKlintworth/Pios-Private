@@ -1,6 +1,6 @@
 #include "list.h"
-#include "led.h"
 #include "delay.h"
+#include "delays.h"
 #include "serial.h"
 #include "rprintf.h"
 #include "fat.h"
@@ -15,39 +15,22 @@ extern char parseArguments[NUMARGS][ARGLENGTH];
 extern char workingDirectory[100];
 void clear_bss();
 void kernel_main() {
-	fatInit();
-	/*
-	file file1, file2, file3;
-	fatOpen(&file1, "/whatis/this/file.txt");
-	char buffer[4000];
-	fatRead(buffer, &file1, 4000);
-	fatCreate("mods.txt");
-	fatCreate("jazz.txt");
-	fatOpen(&file2, "mods.txt");
-	fatOpen(&file3, "jazz.txt");
-	fatWrite(&file3, buffer);
-	char buffer2[4000];
-	fatRead(buffer2, &file3, 4000);
-	esp_printf((void *) putc, "%s", buffer2);
-	*/
+	initFat();
+	initUart();
 	initFatStructs();
 	initEnvironment();
 	initParseArguments();
-	char *buffs = "cd /alan";
-	bufferToArgs(buffs);
-	executeCommand();
-	strcpy(buffs, "pwd");
-	bufferToArgs(buffs);
-	executeCommand();
-	strcpy(buffs, "ls /boot");
-	bufferToArgs(buffs);
-	executeCommand();
-	strcpy(buffs, "cat /alan/alan.txt");
-	bufferToArgs(buffs);
-	executeCommand();
-	putc(20);
+	short isEntering = 0;
+	char buffer[100];
+	while (!(isEntering)){
+		esp_printf((void *) putc, "%s> ", workingDirectory);
+		inputToBuffer(buffer, 100);
+		bufferToArgs(buffer);
+		executeCommand();
+		nullCharArray(buffer, 100);
+	}
 	while (1){
-		putc(getc());
+		
 	}
 }
 

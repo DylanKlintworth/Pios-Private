@@ -30,9 +30,10 @@ unsigned char dataEntries[2048];
 unsigned char dataChars[64][32];
 root_directory_entry *dataPointers[64];
 
-int fatInit() {
+int initFat() {
 	int error;
 	sd_init();
+	esp_printf((void *) putc, "\n----------------------------\nInitializing FAT Filesystem\n----------------------------\n");
 	error = sd_readblock(0, bootSector, 1);
 	if (error == 0){
 		esp_printf((void *) putc, "Boot sector could not be read\n");
@@ -80,7 +81,7 @@ int fatInit() {
 		esp_printf((void *) putc, "%c", bs->oem_name[i]);
 	}
 	esp_printf((void *) putc, "\n");
-	esp_printf((void *) putc, "Bytes per sector: %d\nSectors per Cluster: %d\nNumber of FATs: %d\nFAT Size (Sectors): %d\nROOT DIR SECTOR: %d\n", bs->bytes_per_sector, bs->num_sectors_per_cluster, bs->num_fat_tables, bs->num_sectors_per_fat, root_sector);
+	esp_printf((void *) putc, "Bytes per sector: %d\nSectors per Cluster: %d\nNumber of FATs: %d\nFAT Size (Sectors): %d\nRoot directory sector: %d\n", bs->bytes_per_sector, bs->num_sectors_per_cluster, bs->num_fat_tables, bs->num_sectors_per_fat, root_sector);
 	/*for (i = 0; i < 20; i++){
 		esp_printf((void *) putc, "%x ", fat_table[i]);
 	}*/
@@ -265,7 +266,6 @@ int fatOpen(file *fle, char *filename){
 						fle->rde = rde;
 						fle->start_cluster = rde.cluster;
 						foundSubFile = 1;
-						return 1;
 						break;
 					} else {
 						parentDirectory = rde;
@@ -277,6 +277,9 @@ int fatOpen(file *fle, char *filename){
 			if (i == 64){
 				return 2;
 			}
+		}
+		if (foundSubFile != 1){
+			return 2;
 		}
 		writeFatTable();
 		writeRootDirectory();
@@ -292,7 +295,7 @@ int fatOpen(file *fle, char *filename){
 	Return 4 if file could not be created for specified path.
 	Return 5 if path given is not a valid path
 */
-int fatCreate(char *filename){
+int fatCreate(char *filename, unsigned int isDirectory){
 	initFatStructs();
 	char placementFile[20][11];
 	int i, fileCount;
@@ -351,7 +354,11 @@ int fatCreate(char *filename){
 		charArrToUpper(tempExtension, 3);
 		charArrCpy(pointer->file_name, tempName, 8);
 		charArrCpy(pointer->file_extension, tempExtension, 3);
-		pointer->attribute = 0x20;
+		if (!(isDirectory)){
+			pointer->attribute = 0x20;
+		} else {
+			pointer->attribute = 0x10;
+		}
 		for (i = 0; i < 8192; i++){
 			fat_table_entry *fte = fatTablePointers[i];
 			if (fte->entry == 0x0){
@@ -360,6 +367,33 @@ int fatCreate(char *filename){
 				break;
 			}
 		}
+		/*
+		if (isDirectory){
+			unsigned char tempEntries[2048];
+			unsigned char tempChars[64][32];
+			root_directory_entry *tempPointers[64];
+			readFromCluster(tempEntries, pointer->cluster);
+			int index, count;
+			index = 0; count = 0;
+			for (i = 0; i < 2048; i++){
+				if ((i != 0) && (i % 32 == 0)){
+					count++;
+					index = 0;
+				}
+				tempChars[count][index] = tempEntries[i];
+				index++;
+			}
+			for (i = 0; i < 64; i++){
+				tempPointers[i] = (root_directory_entry *) tempChars[i];
+			}
+			spaceCharArray(tempPointers[0]->file_name, 8);
+			spaceCharArray(tempPointers[1]->file_name, 8);
+			strcpy(tempPointers[0]->file_name, ".");
+			strcpy(tempPointers[1]->file_name, "..");
+			tempPointers[0]->attribute = 0x10;
+			tempPointers[1]->attribute = 0x10;
+			writeDataEntries(*pointer, tempPointers);
+		}*/
 		pointer->file_size = 0x0;
 		writeFatTable();
 		writeRootDirectory();
@@ -493,7 +527,11 @@ int fatCreate(char *filename){
 		charArrToUpper(tempExtension, 3);
 		charArrCpy(pointer->file_name, tempName, 8);
 		charArrCpy(pointer->file_extension, tempExtension, 3);
-		pointer->attribute = 0x20;
+		if (!(isDirectory)){
+			pointer->attribute = 0x20;
+		} else {
+			pointer->attribute = 0x10;
+		}
 		for (i = 0; i < 8192; i++){
 			fat_table_entry *fte = fatTablePointers[i];
 			if (fte->entry == 0x0){
@@ -502,6 +540,32 @@ int fatCreate(char *filename){
 				break;
 			}
 		}
+		/*if (isDirectory){
+			unsigned char tempEntries[2048];
+			unsigned char tempChars[64][32];
+			root_directory_entry *tempPointers[64];
+			readFromCluster(tempEntries, pointer->cluster);
+			int index, count;
+			index = 0; count = 0;
+			for (i = 0; i < 2048; i++){
+				if ((i != 0) && (i % 32 == 0)){
+					count++;
+					index = 0;
+				}
+				tempChars[count][index] = tempEntries[i];
+				index++;
+			}
+			for (i = 0; i < 64; i++){
+				tempPointers[i] = (root_directory_entry *) tempChars[i];
+			}
+			spaceCharArray(tempPointers[0]->file_name, 8);
+			spaceCharArray(tempPointers[1]->file_name, 8);
+			strcpy(tempPointers[0]->file_name, ".");
+			strcpy(tempPointers[1]->file_name, "..");
+			tempPointers[0]->attribute = 0x10;
+			tempPointers[1]->attribute = 0x10;
+			writeDataEntries(*pointer, tempPointers);
+		}*/
 		pointer->file_size = 0x0;
 		writeDataEntries(parentDirectory, dataPointers);
 		writeFatTable();
@@ -629,7 +693,7 @@ int fatWrite(file *fp, char *buffer){
 		writeToCluster(buffer, fpCluster, (strlen(buffer)+1));
 		fp->start_cluster = fpCluster;
 		fp->rde.cluster = fpCluster;
-		fp->rde.file_size = strlen(buffer) + 1;
+		fp->rde.file_size = (strlen(buffer) + 1);
 		fatTablePointers[fpCluster]->entry = 0xfff8;
 		writeFatTable();
 		writeRootDirectory();
@@ -717,7 +781,7 @@ void writeDataEntries(root_directory_entry parentDirectory, root_directory_entry
 		}
 	}
 	unsigned int dataSector = data_sector + ((parentDirectory.cluster - 2) * SECTORS_PER_CLUSTER);
-	charArrCpyIndexOpp((char *) disk, (char *) retBuff, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + 16384));
+	charArrCpyIndexOpp((char *) disk, (char *) retBuff, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + 2048));
 }
 // Adds filenames within a path to an array of strings
 // ex. "/boot/kernel8.elf" -> ["boot", "kernel8.elf"]

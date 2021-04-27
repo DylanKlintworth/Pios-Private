@@ -90,10 +90,10 @@ struct fat_table_entry {
 
 typedef struct fat_table_entry fat_table_entry;
 
-int fatInit();
+int initFat();
 int fatOpen(file *fle, char* filename);
 int fatRead(char* buffer, file* fp, unsigned int length);
-int fatCreate(char *filename);
+int fatCreate(char *filename, unsigned int isDirectory);
 int fatWrite(file *fp, char *buffer);
 int initFatStructs();
 void writeRootDirectory();
