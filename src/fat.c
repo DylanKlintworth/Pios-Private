@@ -755,9 +755,15 @@ int unallocatedFatTableIndex(){
 
 // Read from a specified cluster to data buffer
 void readFromCluster(unsigned char data[], uint16_t clusterNum){
-	unsigned int dataSector = data_sector + ((clusterNum - 2) * SECTORS_PER_CLUSTER);
+	unsigned int dataSector;
+	if (clusterNum < data_sector) {
+		dataSector = root_sector;
+		charArrCpyIndex((char *) data, (char *) disk, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + (root_entries_size * 32)));
+	} else {
+		dataSector = data_sector + ((clusterNum - 2) * SECTORS_PER_CLUSTER);
+		charArrCpyIndex((char *) data, (char *) disk, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + (SECTOR_SIZE * SECTORS_PER_CLUSTER)));
+	} 
 	//sd_readblock(dataSector, data, size);
-	charArrCpyIndex((char *) data, (char *) disk, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + (SECTOR_SIZE * SECTORS_PER_CLUSTER)));
 }
 // Write N length of a data buffer to the specified cluster
 void writeToCluster(char data[], uint16_t clusterNum, unsigned int size){
