@@ -826,8 +826,14 @@ void writeDataEntries(root_directory_entry parentDirectory, root_directory_entry
 			index++;
 		}
 	}
-	unsigned int dataSector = data_sector + ((parentDirectory.cluster - 2) * SECTORS_PER_CLUSTER);
-	charArrCpyIndexOpp((char *) disk, (char *) retBuff, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + 2048));
+	unsigned int dataSector;
+	if(parentDirectory.cluster < data_sector){
+		dataSector = root_sector;
+		charArrCpyIndexOpp((char *) disk, (char *) retBuff, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + 2048));
+	} else {
+		dataSector = data_sector + ((parentDirectory.cluster - 2) * SECTORS_PER_CLUSTER);
+		charArrCpyIndexOpp((char *) disk, (char *) retBuff, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + 2048));
+	}
 }
 // Adds filenames within a path to an array of strings
 // ex. "/boot/kernel8.elf" -> ["boot", "kernel8.elf"]
