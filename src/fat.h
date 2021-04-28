@@ -72,7 +72,7 @@ typedef struct root_directory_entry root_directory_entry;
 
 /*
  *
- * Stores info about an open file
+ * Stores info about an open file mods
  *
  */
 struct file {
