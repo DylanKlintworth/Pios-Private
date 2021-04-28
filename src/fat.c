@@ -96,7 +96,7 @@ int initFat() {
 		esp_printf((void *) putc, "%x ", rootEntries[i]);
 	}*/
 	error = sd_readblock(0, disk, bs->total_sectors);
-	rootEntry.cluster = root_sector;
+	rootEntry.cluster = 0;
 	return 1;
 }
 
@@ -716,6 +716,7 @@ int fatWrite(file *fp, char *buffer){
 		}
 		writeFileLength(fp->parentRde, fp->rde, (strlen(buffer) + 1));
 		writeFatTable();
+		initFatStructs();
 		writeRootDirectory();
 		return 0;
 	} else if (clustersNeeded == 1){
@@ -736,6 +737,7 @@ int fatWrite(file *fp, char *buffer){
 		writeFileLength(fp->parentRde, fp->rde, (strlen(buffer) + 1));
 		fatTablePointers[fpCluster]->entry = 0xfff8;
 		writeFatTable();
+		initFatStructs();
 		writeRootDirectory();
 		return 0;
 	}
@@ -757,7 +759,7 @@ int unallocatedFatTableIndex(){
 // Read from a specified cluster to data buffer
 void readFromCluster(unsigned char data[], uint16_t clusterNum){
 	unsigned int dataSector;
-	if (clusterNum < data_sector) {
+	if (clusterNum == 0) {
 		dataSector = root_sector;
 		charArrCpyIndex((char *) data, (char *) disk, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + (root_entries_size * 32)));
 	} else {
@@ -827,7 +829,7 @@ void writeDataEntries(root_directory_entry parentDirectory, root_directory_entry
 		}
 	}
 	unsigned int dataSector;
-	if(parentDirectory.cluster < data_sector){
+	if(parentDirectory.cluster == 0){
 		dataSector = root_sector;
 		charArrCpyIndexOpp((char *) disk, (char *) retBuff, (dataSector * SECTOR_SIZE), ((dataSector * SECTOR_SIZE) + 2048));
 	} else {
