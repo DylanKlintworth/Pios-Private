@@ -30,6 +30,8 @@ unsigned char dataEntries[2048];
 unsigned char dataChars[64][32];
 root_directory_entry *dataPointers[64];
 
+root_directory_entry rootEntry;
+
 int initFat() {
 	int error;
 	sd_init();
@@ -94,6 +96,7 @@ int initFat() {
 		esp_printf((void *) putc, "%x ", rootEntries[i]);
 	}*/
 	error = sd_readblock(0, disk, bs->total_sectors);
+	rootEntry.cluster = root_sector;
 	return 1;
 }
 
@@ -184,6 +187,7 @@ int fatOpen(file *fle, char *filename){
 			int c;
 			c = strcmp(placementFile[0], path);
 			if (c == 0){
+				fle->parentRde = rootEntry;
 				fle->rde = rde;
 				fle->start_cluster = rde.cluster;
 				foundFile = 1;
@@ -263,6 +267,7 @@ int fatOpen(file *fle, char *filename){
 				c = strcmp(placementFile[placementFileIndex], p);
 				if (c == 0){
 					if (placementFileIndex == subDirectIndex){
+						fle->parentRde = parentDirectory;
 						fle->rde = rde;
 						fle->start_cluster = rde.cluster;
 						foundSubFile = 1;
@@ -575,6 +580,40 @@ int fatCreate(char *filename, unsigned int isDirectory){
 	return 5;
 }
 	
+int writeFileLength(root_directory_entry parentDirectory, root_directory_entry rde, unsigned int size){
+	unsigned char tempEntries[2048];
+	unsigned char tempChars[64][32];
+	root_directory_entry* tempPointers[64];
+	readFromCluster(tempEntries, parentDirectory.cluster);
+	char rdeName[11];
+	rootDirectoryToFilename(rde, rdeName);
+	int i, count, index;
+	count = 0; index = 0;
+	for (i = 0; i < CLUSTER_SIZE; i++){
+		if ((i != 0) && ((i % 32) == 0)){
+			count++;
+			index = 0;
+		}
+		tempChars[count][index] = tempEntries[i];
+	}
+	for (i = 0; i < 64; i++){
+		tempPointers[i] = (root_directory_entry *) tempChars[i];
+	}
+	for (i = 0; i < 64; i++){
+		root_directory_entry *tempRde = tempPointers[i];
+		if (tempRde->file_name[0] == '\0'){
+			continue;
+		}
+		char buffer[11];
+		rootDirectoryToFilename(*tempRde, buffer);
+		if (strcmp(buffer, rdeName) == 0){
+			tempRde->file_size = size;
+			break;
+		}
+	}
+	writeDataEntries(parentDirectory, tempPointers);
+	return 0;
+}
 
 int fatRead(char* buffer, file* fp, unsigned int length){
 	initFatStructs();
@@ -674,7 +713,7 @@ int fatWrite(file *fp, char *buffer){
 				fpCluster = nextCluster;
 			}
 		}
-		fp->rde.file_size = (strlen(buffer) + 1);
+		writeFileLength(fp->parentRde, fp->rde, (strlen(buffer) + 1));
 		writeFatTable();
 		writeRootDirectory();
 		return 0;
@@ -693,7 +732,7 @@ int fatWrite(file *fp, char *buffer){
 		writeToCluster(buffer, fpCluster, (strlen(buffer)+1));
 		fp->start_cluster = fpCluster;
 		fp->rde.cluster = fpCluster;
-		fp->rde.file_size = (strlen(buffer) + 1);
+		writeFileLength(fp->parentRde, fp->rde, (strlen(buffer) + 1));
 		fatTablePointers[fpCluster]->entry = 0xfff8;
 		writeFatTable();
 		writeRootDirectory();

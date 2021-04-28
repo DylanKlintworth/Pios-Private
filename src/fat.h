@@ -78,6 +78,7 @@ typedef struct root_directory_entry root_directory_entry;
 struct file {
     struct file *next;
     struct file *prev;
+    struct root_directory_entry parentRde;
     struct root_directory_entry rde;
     uint16_t start_cluster;
 };
@@ -99,6 +100,7 @@ int initFatStructs();
 void writeRootDirectory();
 void writeFatTable();
 void writeDataEntries(root_directory_entry parentDirectory, root_directory_entry *entries[]);
+int writeFileLength(root_directory_entry parentDirectory, root_directory_entry rde, unsigned int size);
 int pathToFileName(char fn[][11], char *path, int length);
 int unallocatedFatTableIndex();
 void nullCharArray(char arr[], int length);
