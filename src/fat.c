@@ -595,6 +595,7 @@ int writeFileLength(root_directory_entry parentDirectory, root_directory_entry r
 			index = 0;
 		}
 		tempChars[count][index] = tempEntries[i];
+		index++;
 	}
 	for (i = 0; i < 64; i++){
 		tempPointers[i] = (root_directory_entry *) tempChars[i];
