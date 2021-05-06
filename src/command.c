@@ -69,6 +69,10 @@ int executeCommand(){
                     esp_printf((void *) putc, "Path: %s not found.\n", parseArguments[3]);
                     break;
                 }
+                if (tempFile.rde.attribute != 0x20){
+                    esp_printf((void *) putc, "Path: %s is a directory.\n", parseArguments[3]);
+                    break;
+                }
                 esp_printf((void *) putc, "Writing to path: %s.\n", parseArguments[3]);
                 fatWrite(&tempFile, buffer);
             } else {
@@ -91,7 +95,7 @@ void ls(char path[]){
     if ((strcmp("/", workingDirectory) == 0) && (strlen(path) == 0)){
         for (i = 0; i < 512; i++){
             root_directory_entry rde = *rootDirectoryPointers[i];
-            if (rde.attribute == 15){
+            if ((rde.attribute != 0x10) && (rde.attribute != 0x20)){
                 continue;
             } else if (rde.file_name[0] == '\0'){
                 continue;
