@@ -67,10 +67,12 @@ int executeCommand(){
                 int result = fatOpen(&tempFile, parseArguments[3]);
                 if (result != 0){
                     esp_printf((void *) putc, "Path: %s not found.\n", parseArguments[3]);
+                    nullCharArray(buffer, strlen(parseArguments[1]) + 1);
                     break;
                 }
                 if (tempFile.rde.attribute != 0x20){
                     esp_printf((void *) putc, "Path: %s is a directory.\n", parseArguments[3]);
+                    nullCharArray(buffer, strlen(parseArguments[1]) + 1);
                     break;
                 }
                 esp_printf((void *) putc, "Writing to path: %s.\n", parseArguments[3]);
