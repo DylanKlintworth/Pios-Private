@@ -115,7 +115,7 @@ void ls(char path[]){
                 if (rde.attribute == 0x10){
                     esp_printf((void *) putc, "Directory: ");
                 } else if (rde.attribute == 0x20){
-                    esp_printf((void *) putc, "File: ");
+                    esp_printf((void *) putc, "File: Size - %d, ", rde.file_size);
                 }
                 esp_printf((void *) putc, "%s\n", path);
             }
@@ -135,7 +135,7 @@ void ls(char path[]){
         if (tempFile.rde.attribute == 0x20){
             char tempFilename[11];
             rootDirectoryToFilename(tempFile.rde, tempFilename);
-            esp_printf((void *) putc, "File: %s\n", tempFilename);
+            esp_printf((void *) putc, "File: Size - %d, %s\n", tempFile.rde.file_size, tempFilename);
         } else if (tempFile.rde.attribute == 0x10){
             unsigned char tempEntries[2048];
             unsigned char tempChars[64][32];
@@ -166,7 +166,7 @@ void ls(char path[]){
                     if (rde.attribute == 0x10){
                         esp_printf((void *) putc, "Directory: ");
                     } else if (rde.attribute == 0x20){
-                        esp_printf((void *) putc, "File: ");
+                        esp_printf((void *) putc, "File: Size - %d, ", rde.file_size);
                     }
                     esp_printf((void *) putc, "%s\n", tempFilename);
                 }
@@ -245,6 +245,7 @@ int cat(char path[]){
             return 3;
     }
     if (result != 0 || tempFile.rde.attribute == 0x10){ 
+        esp_printf((void *) putc, "Path is a directory.\n");
         return 4;
     }
     char buffer[tempFile.rde.file_size];
