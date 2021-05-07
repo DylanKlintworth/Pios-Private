@@ -319,7 +319,7 @@ int help(){
 
 int echo(char buffer[], char redirection[]){
     if (strlen(buffer) == 0){
-        esp_printf((void *) putc, "");
+        esp_printf((void *) putc, "\n");
         return 0;
     }
     esp_printf((void *) putc, "%s\n", buffer);
