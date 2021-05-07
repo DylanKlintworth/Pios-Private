@@ -75,6 +75,7 @@ int executeCommand(){
                 }
                 esp_printf((void *) putc, "Writing to path: %s.\n", parseArguments[3]);
                 fatWrite(&tempFile, buffer);
+                nullCharArray(buffer, strlen(parseArguments[1]) + 1);
             } else {
                 echo(parseArguments[1], "");
             }
