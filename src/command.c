@@ -60,27 +60,23 @@ int executeCommand(){
             help();
             break;
         case 7:
-            char buffer[strlen(parseArguments[1]) + 1];
             if (redirection) {
+                char buffer[strlen(parseArguments[1]) + 1];
                 echo(parseArguments[1], buffer);
                 file tempFile;
                 int result = fatOpen(&tempFile, parseArguments[3]);
                 if (result != 0){
                     esp_printf((void *) putc, "Path: %s not found.\n", parseArguments[3]);
-                    nullCharArray(buffer, strlen(parseArguments[1]) + 1);
                     break;
                 }
                 if (tempFile.rde.attribute != 0x20){
                     esp_printf((void *) putc, "Path: %s is a directory.\n", parseArguments[3]);
-                    nullCharArray(buffer, strlen(parseArguments[1]) + 1);
                     break;
                 }
                 esp_printf((void *) putc, "Writing to path: %s.\n", parseArguments[3]);
                 fatWrite(&tempFile, buffer);
-                nullCharArray(buffer, strlen(parseArguments[1]) + 1);
             } else {
-                echo(parseArguments[1], buffer);
-                nullCharArray(buffer, (strlen(parseArguments[1]) + 1));
+                echo(parseArguments[1], "\0");
             }
             break;
         default:
@@ -324,6 +320,10 @@ int echo(char buffer[], char redirection[]){
         return 0;
     }
     esp_printf((void *) putc, "%s\n", buffer);
-    charArrCpy(redirection, buffer, (strlen(buffer) + 1));
-    return 0;
+    if (redirection[0] == '\0'){
+        return 1;
+    } else {
+        charArrCpy(redirection, buffer, (strlen(buffer) + 1));
+        return 0;
+    }
 }
