@@ -231,9 +231,21 @@ int cat(char path[]){
     file tempFile;
     int result;
     result = fatOpen(&tempFile, path);
-    if (result != 0 || tempFile.rde.attribute == 0x10){
-        esp_printf((void *) putc, "Path could not be found.\n");
-        return 1;
+    switch (result){
+        case 0:
+            break;
+        case 1: 
+            esp_printf((void *) putc, "Directory within path could not be found\n");
+            return 1;
+        case 2:
+            esp_printf((void *) putc, "Subdirectory within path could not be found\n");
+            return 2;
+        case 3:
+            esp_printf((void *) putc, "Path could not be found\n");
+            return 3;
+    }
+    if (result != 0 || tempFile.rde.attribute == 0x10){ 
+        return 4;
     }
     char buffer[tempFile.rde.file_size];
     fatRead(buffer, &tempFile, tempFile.rde.file_size);
