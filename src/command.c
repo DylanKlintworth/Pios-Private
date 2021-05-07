@@ -60,8 +60,8 @@ int executeCommand(){
             help();
             break;
         case 7:
+            char buffer[strlen(parseArguments[1]) + 1];
             if (redirection) {
-                char buffer[strlen(parseArguments[1]) + 1];
                 echo(parseArguments[1], buffer);
                 file tempFile;
                 int result = fatOpen(&tempFile, parseArguments[3]);
@@ -79,7 +79,8 @@ int executeCommand(){
                 fatWrite(&tempFile, buffer);
                 nullCharArray(buffer, strlen(parseArguments[1]) + 1);
             } else {
-                echo(parseArguments[1], "");
+                echo(parseArguments[1], buffer);
+                nullCharArray(buffer, (strlen(parseArguments[1]) + 1));
             }
             break;
         default:
@@ -318,7 +319,7 @@ int help(){
 }
 
 int echo(char buffer[], char redirection[]){
-    if (strlen(buffer) == 0){
+    if ((strlen(buffer) == 0)){
         esp_printf((void *) putc, "\n");
         return 0;
     }
