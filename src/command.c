@@ -80,7 +80,7 @@ int executeCommand(){
             }
             break;
         default:
-            esp_printf((void *) putc, "\nCommand not found.\n", parseArguments[0]);
+            esp_printf((void *) putc, "\nCommand %s not found.\n", parseArguments[0]);
             initParseArguments();
             return 1;
             break;
